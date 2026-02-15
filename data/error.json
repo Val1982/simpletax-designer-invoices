@@ -3,8 +3,8 @@
     "status": "error",
     "release": "1031.3",
     "url": "WebServicesBG",
-    "serverTime": "2026-02-15T12:36:43",
+    "serverTime": "2026-02-15T12:38:48",
     "apiMethod": null,
-    "description": "Invalid web services token supplied"
+    "description": "Невалидно потребителско име или парола."
   }
 }
