@@ -1,0 +1,17 @@
+name: Fetch invoices
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test run
+        run: echo "Workflow is working"
