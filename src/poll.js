@@ -54,24 +54,23 @@ function maxTimestamp(a, b) {
   return a > b ? a : b;
 }
 
-// "YYYY-MM-DD HH:mm:ss" -> +1 second, returns same format
+// "YYYY-MM-DD HH:mm:ss" -> +1 second
 function addOneSecond(ts) {
-  // parse as UTC-ish (no tz given). We'll treat it as local server time but +1s is safe either way.
   const iso = ts.replace(" ", "T") + "Z";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return ts;
+
   d.setUTCSeconds(d.getUTCSeconds() + 1);
 
   const pad = (n) => String(n).padStart(2, "0");
-  const out =
+  return (
     d.getUTCFullYear() +
     "-" + pad(d.getUTCMonth() + 1) +
     "-" + pad(d.getUTCDate()) +
     " " + pad(d.getUTCHours()) +
     ":" + pad(d.getUTCMinutes()) +
-    ":" + pad(d.getUTCSeconds());
-
-  return out;
+    ":" + pad(d.getUTCSeconds())
+  );
 }
 
 async function main() {
@@ -85,7 +84,7 @@ async function main() {
 
   const invoices = Array.isArray(json?.response?.result) ? json.response.result : [];
 
-  // dedupe по documentID (и пазим seen списък с ограничение)
+  // dedupe по documentID
   const seen = new Set(state.seenDocumentIDs);
   const fresh = [];
   for (const inv of invoices) {
@@ -96,20 +95,19 @@ async function main() {
     fresh.push(inv);
   }
 
-  // snapshot само на "fresh" фактурите
   const runStamp = new Date().toISOString().replace(/[:.]/g, "-");
   fs.writeFileSync(`data/invoices_${runStamp}.json`, JSON.stringify(fresh, null, 2));
 
-  // най-нов timestamp от всички върнати (не само fresh)
+  // най-нов timestamp от всички върнати
   let newest = issuedFrom;
   for (const inv of invoices) {
     newest = maxTimestamp(newest, inv.issuedTimestamp);
   }
 
-  // курсор +1 секунда (ако не е мръднал, ще си остане същият)
-  const nextCursor = newest === issuedFrom ? issuedFrom : addOneSecond(newest);
+  // ВАЖНО: inclusive -> винаги +1 секунда
+  const nextCursor = addOneSecond(newest);
 
-  // ограничаваме seen IDs (последните 2000)
+  // ограничаваме seen IDs
   const seenArr = Array.from(seen);
   const MAX_SEEN = 2000;
   state.seenDocumentIDs = seenArr.slice(Math.max(0, seenArr.length - MAX_SEEN));
