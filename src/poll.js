@@ -10,23 +10,10 @@ if (!endpoint || !username || !secretKey || !token) {
 }
 
 async function efCall(method, parameters = {}) {
-  const paramsXml = Object.entries(parameters)
-    .map(([k, v]) => `<parameter name="${k}" value="${String(v).replaceAll('"', "&quot;")}" />`)
-    .join("\n");
-
-  const xml =
-`<?xml version="1.0" encoding="utf-8"?>
-<request>
-  <login username="${username}" secretKey="${secretKey}" token="${token}" />
-  <method name="${method}">
-    ${paramsXml}
-  </method>
-</request>`;
-
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: xml
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, secretKey, token, method, parameters })
   });
 
   const text = await res.text();
@@ -34,18 +21,32 @@ async function efCall(method, parameters = {}) {
   fs.mkdirSync("data", { recursive: true });
   fs.writeFileSync("data/last_response.txt", text);
 
-  return { status: res.status, body: text };
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    fs.writeFileSync("data/error.html", text);
+    throw new Error(`Non-JSON response (${res.status}). Saved to data/error.html`);
+  }
+
+  if (!res.ok) {
+    fs.writeFileSync("data/error.json", JSON.stringify(data, null, 2));
+    throw new Error(`HTTP ${res.status}. Saved to data/error.json`);
+  }
+
+  return data;
 }
 
 async function main() {
-  console.log("Calling EuroFaktura API...");
-
-  const resp = await efCall("SalesInvoiceList", {
+  // За начало: дърпаме списък (до 500) – само issued
+  const data = await efCall("SalesInvoiceList", {
     status: "IssuedInvoice"
   });
 
-  console.log("HTTP status:", resp.status);
-  console.log("Response saved to data/last_response.txt");
+  fs.mkdirSync("data", { recursive: true });
+  fs.writeFileSync("data/sample.json", JSON.stringify(data, null, 2));
+
+  console.log("OK. Saved response to data/sample.json and data/last_response.txt");
 }
 
 await main();
