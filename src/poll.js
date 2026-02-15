@@ -2,13 +2,14 @@ import fs from "fs";
 
 const endpoint = process.env.EF_ENDPOINT;
 const username = process.env.EF_USERNAME;
-const token = process.env.EF_TOKEN;
-
-// ВАЖНО: secretKey трябва да присъства в JSON, дори да е празен стринг
 const secretKey = process.env.EF_SECRETKEY || "";
+const token = process.env.EF_TOKEN;
 
 if (!endpoint || !username || !token) {
   throw new Error("Missing EF_ENDPOINT / EF_USERNAME / EF_TOKEN. Check GitHub Secrets.");
+}
+if (!secretKey) {
+  throw new Error("EF_SECRETKEY is empty. Add it in GitHub Secrets.");
 }
 
 async function efCall(method, parameters = {}) {
@@ -23,24 +24,41 @@ async function efCall(method, parameters = {}) {
   const text = await res.text();
 
   fs.mkdirSync("data", { recursive: true });
-  fs.writeFileSync("data/last_response.txt", text);
+  fs.writeFileSync(`data/${method}_raw.txt`, text);
 
-  // Не падаме ако не е JSON — просто го пазим
+  let data;
   try {
-    return JSON.parse(text);
+    data = JSON.parse(text);
   } catch {
-    fs.writeFileSync("data/error.html", text);
-    return { _nonJson: true, _httpStatus: res.status };
+    fs.writeFileSync(`data/${method}_error.html`, text);
+    throw new Error(`Non-JSON response from ${method} (HTTP ${res.status}). See data/${method}_error.html`);
   }
+
+  return { httpStatus: res.status, data };
 }
 
 async function main() {
-  const result = await efCall("SalesInvoiceList", { status: "IssuedInvoice" });
-
   fs.mkdirSync("data", { recursive: true });
-  fs.writeFileSync("data/sample.json", JSON.stringify(result, null, 2));
 
-  console.log("Done. Saved data/sample.json and data/last_response.txt");
+  // 1) ТЕСТ: вземи конкретна фактура (номер + дата)
+  // Ако върне данни -> значи API работи и проблемът е само в критериите на List.
+  const getResp = await efCall("SalesInvoiceGet", {
+    number: "0000000117",
+    date: "2026-01-30"
+  });
+  fs.writeFileSync("data/test_SalesInvoiceGet.json", JSON.stringify(getResp, null, 2));
+
+  // 2) LIST: пробваме да извадим фактури по дата диапазон (януари 2026)
+  const listResp = await efCall("SalesInvoiceList", {
+    dateFrom: "2026-01-01",
+    dateTo: "2026-01-31",
+    status: "IssuedInvoice"
+  });
+  fs.writeFileSync("data/test_SalesInvoiceList.json", JSON.stringify(listResp, null, 2));
+
+  console.log("Saved:");
+  console.log("- data/test_SalesInvoiceGet.json");
+  console.log("- data/test_SalesInvoiceList.json");
 }
 
 await main();
