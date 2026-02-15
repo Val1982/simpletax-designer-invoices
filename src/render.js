@@ -10,6 +10,20 @@ function escapeHtml(s = "") {
     .replace(/'/g, "&#039;");
 }
 
+function pick(obj, paths, fallback = "") {
+  for (const p of paths) {
+    const parts = p.split(".");
+    let cur = obj;
+    let ok = true;
+    for (const part of parts) {
+      if (cur == null || !(part in cur)) { ok = false; break; }
+      cur = cur[part];
+    }
+    if (ok && cur !== undefined && cur !== null && String(cur).trim() !== "") return cur;
+  }
+  return fallback;
+}
+
 function money(x, currency = "BGN") {
   if (x === null || x === undefined || x === "") return "";
   const n = Number(x);
@@ -23,54 +37,73 @@ async function buildQrSvg(text) {
 }
 
 function readData() {
-  if (fs.existsSync("data/invoices.json")) {
-    return JSON.parse(fs.readFileSync("data/invoices.json", "utf8"));
-  }
-  if (fs.existsSync("data/last_response.json")) {
-    return JSON.parse(fs.readFileSync("data/last_response.json", "utf8"));
-  }
+  if (fs.existsSync("data/invoices.json")) return JSON.parse(fs.readFileSync("data/invoices.json", "utf8"));
+  if (fs.existsSync("data/last_response.json")) return JSON.parse(fs.readFileSync("data/last_response.json", "utf8"));
   return {};
 }
 
 function pickInvoice(parsed) {
   if (Array.isArray(parsed)) return parsed[0] || {};
-  if (parsed.invoice) return parsed.invoice;
-  return parsed;
+  if (parsed && parsed.invoice) return parsed.invoice;
+  return parsed || {};
+}
+
+function getBranding(inv) {
+  const b = inv.branding || {};
+  const logo = pick(b, ["logoBase64", "logoUrl"], "");
+  const watermark = pick(b, ["watermarkBase64", "watermarkUrl"], "");
+  return { logo, watermark };
 }
 
 function buildLogoHtml(inv) {
-  const b = inv.branding || {};
-  const logo = b.logoBase64 || b.logoUrl || "";
+  const { logo } = getBranding(inv);
   if (!logo) return "";
   return `<img class="logo" src="${escapeHtml(logo)}" alt="Logo" />`;
 }
 
 function buildWatermarkHtml(inv) {
-  const b = inv.branding || {};
-  const wm = b.watermarkBase64 || b.watermarkUrl || "";
-  if (!wm) return "";
-  return `<div class="watermark" style="background-image:url('${escapeHtml(wm)}')"></div>`;
+  const { watermark } = getBranding(inv);
+  if (!watermark) return "";
+  return `<div class="watermark" style="background-image:url('${escapeHtml(watermark)}')"></div>`;
 }
 
 function buildItems(inv) {
-  const items = inv.items || [];
-  const currency = inv.currency || "BGN";
+  const items = Array.isArray(inv.items) ? inv.items : (Array.isArray(inv.Rows) ? inv.Rows : []);
+  const currency = pick(inv, ["currency", "Currency"], "BGN");
 
   if (!items.length) {
-    return `<div class="row"><div class="desc"><div class="title">No items</div></div></div>`;
-  }
-
-  return items.map(it => {
     return `
       <div class="row">
         <div class="desc">
-          <div class="title">${escapeHtml(it.name || it.description || "")}</div>
-          <div class="sub">${escapeHtml(it.note || "")}</div>
+          <div class="title">No items</div>
+          <div class="sub">—</div>
         </div>
         <div class="nums">
-          <div>${escapeHtml(it.qty || "")}</div>
-          <div>${money(it.unitPrice || it.price || "", currency)}</div>
-          <div class="price">${money(it.total || "", currency)}</div>
+          <div>—</div>
+          <div>—</div>
+          <div class="price">—</div>
+        </div>
+      </div>
+    `;
+  }
+
+  return items.map((it) => {
+    const title = pick(it, ["name", "description", "itemName", "ItemName"], "Item");
+    const sub = pick(it, ["note", "details", "comment"], "");
+    const qty = pick(it, ["qty", "quantity", "Qty"], "");
+    const unit = pick(it, ["unitPrice", "price", "unit_price", "UnitPrice"], "");
+    const total = pick(it, ["total", "lineTotal", "amount", "LineTotal"], "");
+
+    return `
+      <div class="row">
+        <div class="desc">
+          <div class="title">${escapeHtml(title)}</div>
+          <div class="sub">${escapeHtml(sub)}</div>
+        </div>
+        <div class="nums">
+          <div>${escapeHtml(qty)}</div>
+          <div>${money(unit, currency)}</div>
+          <div class="price">${money(total, currency)}</div>
         </div>
       </div>
     `;
@@ -83,40 +116,67 @@ async function main() {
 
   const template = fs.readFileSync("preview/template.html", "utf8");
 
-  const qrText = inv.qrText || inv.paymentLink || "";
-  const qrSvg = await buildQrSvg(qrText);
+  // Buyer/Seller mappings (гъвкаво)
+  const buyer = inv.buyer || inv.customer || inv.Client || {};
+  const seller = inv.seller || inv.company || inv.Supplier || {};
+
+  // QR текст (fallback ако няма)
+  const qrText = pick(inv, ["qrText", "paymentLink", "publicLink", "Links.Public", "links.public"], "");
+  const qrSvg = qrText ? await buildQrSvg(qrText) : await buildQrSvg("https://simpletax.bg");
+
+  // Totals mappings (гъвкаво)
+  const currency = pick(inv, ["currency", "Currency"], "BGN");
+  const subtotal = pick(inv, ["totals.subtotal", "subtotal", "Totals.Subtotal"], "");
+  const vat = pick(inv, ["totals.vatTotal", "vatTotal", "Totals.Vat", "Totals.VAT"], "");
+  const total = pick(inv, ["totals.grandTotal", "total", "Totals.Total", "grandTotal"], "");
+
+  // Payment mappings
+  const payment = inv.payment || inv.Payment || {};
+  const payBank = pick(inv, ["payment.bank", "Payment.Bank"], "") || pick(seller, ["bank", "Bank"], "");
+  const payIban = pick(inv, ["payment.iban", "Payment.IBAN", "Payment.Iban"], "") || pick(seller, ["iban", "IBAN", "Iban"], "");
+  const payBic = pick(inv, ["payment.bic", "Payment.BIC", "Payment.Bic"], "") || pick(seller, ["bic", "BIC", "Bic"], "");
+  const payHolder = pick(inv, ["payment.holder", "Payment.Holder"], "") || pick(seller, ["name", "Name"], "");
 
   const replacements = {
     "{{LOGO}}": buildLogoHtml(inv),
     "{{WATERMARK}}": buildWatermarkHtml(inv),
     "{{QR}}": qrSvg,
-    "{{BUYER_NAME}}": escapeHtml(inv.buyer?.name || ""),
-    "{{BUYER_COMPANY}}": escapeHtml(inv.buyer?.company || ""),
-    "{{BUYER_PHONE}}": escapeHtml(inv.buyer?.phone || ""),
-    "{{BUYER_EMAIL}}": escapeHtml(inv.buyer?.email || ""),
-    "{{BUYER_ADDRESS}}": escapeHtml(inv.buyer?.address || ""),
-    "{{SELLER_ADDRESS}}": escapeHtml(inv.seller?.address || ""),
-    "{{SELLER_PHONE}}": escapeHtml(inv.seller?.phone || ""),
-    "{{INVOICE_NO}}": escapeHtml(inv.number || ""),
-    "{{INVOICE_DATE}}": escapeHtml(inv.issueDate || ""),
-    "{{DUE_DATE}}": escapeHtml(inv.dueDate || ""),
+
+    "{{BUYER_NAME}}": escapeHtml(pick(buyer, ["name", "contactName", "Name"], "Client Name")),
+    "{{BUYER_COMPANY}}": escapeHtml(pick(buyer, ["company", "companyName", "Company"], pick(buyer, ["name", "Name"], "Company"))),
+    "{{BUYER_PHONE}}": escapeHtml(pick(buyer, ["phone", "Phone"], "")),
+    "{{BUYER_EMAIL}}": escapeHtml(pick(buyer, ["email", "Email"], "")),
+    "{{BUYER_ADDRESS}}": escapeHtml(pick(buyer, ["address", "Address"], "")),
+
+    "{{SELLER_ADDRESS}}": escapeHtml(pick(seller, ["address", "Address"], "")),
+    "{{SELLER_PHONE}}": escapeHtml(pick(seller, ["phone", "Phone"], "")),
+
+    "{{INVOICE_NO}}": escapeHtml(pick(inv, ["number", "invoiceNo", "InvoiceNo", "No"], "")),
+    "{{INVOICE_DATE}}": escapeHtml(pick(inv, ["issueDate", "date", "InvoiceDate"], "")),
+    "{{DUE_DATE}}": escapeHtml(pick(inv, ["dueDate", "DueDate"], "")),
+
     "{{ITEM_ROWS}}": buildItems(inv),
-    "{{PAY_BANK}}": escapeHtml(inv.payment?.bank || ""),
-    "{{PAY_IBAN}}": escapeHtml(inv.payment?.iban || ""),
-    "{{PAY_BIC}}": escapeHtml(inv.payment?.bic || ""),
-    "{{PAY_HOLDER}}": escapeHtml(inv.payment?.holder || ""),
-    "{{SUBTOTAL}}": money(inv.subtotal || "", inv.currency),
-    "{{VAT}}": money(inv.vatTotal || "", inv.currency),
-    "{{TOTAL}}": money(inv.total || "", inv.currency)
+
+    "{{PAY_BANK}}": escapeHtml(payBank),
+    "{{PAY_IBAN}}": escapeHtml(payIban),
+    "{{PAY_BIC}}": escapeHtml(payBic),
+    "{{PAY_HOLDER}}": escapeHtml(payHolder),
+
+    "{{SUBTOTAL}}": money(subtotal, currency),
+    "{{VAT}}": money(vat, currency),
+    "{{TOTAL}}": money(total, currency),
   };
 
   let html = template;
-  for (const key in replacements) {
-    html = html.replaceAll(key, replacements[key]);
+  for (const [k, v] of Object.entries(replacements)) {
+    html = html.replaceAll(k, v);
   }
 
-  fs.writeFileSync("preview/index.html", html);
+  fs.writeFileSync("preview/index.html", html, "utf8");
   console.log("Preview generated.");
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
