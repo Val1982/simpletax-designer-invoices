@@ -21,14 +21,14 @@ async function efCall(method, parameters = {}) {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error(`Non-JSON response (${res.status}): ${text.slice(0, 500)}`);
-  }
-
-  if (!res.ok) {
     fs.mkdirSync("data", { recursive: true });
     fs.writeFileSync("data/error.html", text);
     throw new Error(`Non-JSON response (${res.status}). Saved full response to data/error.html`);
 
+  }
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${JSON.stringify(data).slice(0, 500)}`);
   }
   return data;
 }
