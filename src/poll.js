@@ -8,14 +8,18 @@ const token = process.env.EF_TOKEN;
 if (!endpoint || !username || !token) throw new Error("Missing EF_ENDPOINT / EF_USERNAME / EF_TOKEN.");
 if (!secretKey) throw new Error("EF_SECRETKEY missing/empty.");
 
-// ---- state ----
 const STATE_FILE = "state.json";
+
 function loadState() {
   if (!fs.existsSync(STATE_FILE)) {
-    return { issuedTimestampFrom: "2026-01-01 00:00:00" }; // стартова стойност
+    return { issuedTimestampFrom: "2026-01-01 00:00:00", seenDocumentIDs: [] };
   }
-  return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  const s = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  if (!Array.isArray(s.seenDocumentIDs)) s.seenDocumentIDs = [];
+  if (!s.issuedTimestampFrom) s.issuedTimestampFrom = "2026-01-01 00:00:00";
+  return s;
 }
+
 function saveState(state) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
@@ -44,17 +48,35 @@ async function efCall(method, parameters = {}) {
   return json;
 }
 
-// "2026-01-30 09:47:29" -> sortable string already, but we still keep max by compare
 function maxTimestamp(a, b) {
   if (!a) return b;
   if (!b) return a;
   return a > b ? a : b;
 }
 
+// "YYYY-MM-DD HH:mm:ss" -> +1 second, returns same format
+function addOneSecond(ts) {
+  // parse as UTC-ish (no tz given). We'll treat it as local server time but +1s is safe either way.
+  const iso = ts.replace(" ", "T") + "Z";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return ts;
+  d.setUTCSeconds(d.getUTCSeconds() + 1);
+
+  const pad = (n) => String(n).padStart(2, "0");
+  const out =
+    d.getUTCFullYear() +
+    "-" + pad(d.getUTCMonth() + 1) +
+    "-" + pad(d.getUTCDate()) +
+    " " + pad(d.getUTCHours()) +
+    ":" + pad(d.getUTCMinutes()) +
+    ":" + pad(d.getUTCSeconds());
+
+  return out;
+}
+
 async function main() {
   const state = loadState();
-
-  const issuedFrom = state.issuedTimestampFrom || "2026-01-01 00:00:00";
+  const issuedFrom = state.issuedTimestampFrom;
 
   const json = await efCall("SalesInvoiceList", {
     issuedTimestampFrom: issuedFrom,
@@ -63,36 +85,54 @@ async function main() {
 
   const invoices = Array.isArray(json?.response?.result) ? json.response.result : [];
 
-  // запиши snapshot на този run
-  const runStamp = new Date().toISOString().replace(/[:.]/g, "-");
-  fs.writeFileSync(`data/invoices_${runStamp}.json`, JSON.stringify(invoices, null, 2));
+  // dedupe по documentID (и пазим seen списък с ограничение)
+  const seen = new Set(state.seenDocumentIDs);
+  const fresh = [];
+  for (const inv of invoices) {
+    const id = inv.documentID || inv.documentId || inv.id;
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    fresh.push(inv);
+  }
 
-  // намери най-новия issuedTimestamp
+  // snapshot само на "fresh" фактурите
+  const runStamp = new Date().toISOString().replace(/[:.]/g, "-");
+  fs.writeFileSync(`data/invoices_${runStamp}.json`, JSON.stringify(fresh, null, 2));
+
+  // най-нов timestamp от всички върнати (не само fresh)
   let newest = issuedFrom;
   for (const inv of invoices) {
     newest = maxTimestamp(newest, inv.issuedTimestamp);
   }
 
-  // ако има нови, премести курсора 1 секунда напред, за да не дърпа пак същата
-  // (ще добавим +1 сек в следваща стъпка, ако се налага; засега пазим точно newest)
-  state.issuedTimestampFrom = newest;
+  // курсор +1 секунда (ако не е мръднал, ще си остане същият)
+  const nextCursor = newest === issuedFrom ? issuedFrom : addOneSecond(newest);
+
+  // ограничаваме seen IDs (последните 2000)
+  const seenArr = Array.from(seen);
+  const MAX_SEEN = 2000;
+  state.seenDocumentIDs = seenArr.slice(Math.max(0, seenArr.length - MAX_SEEN));
+
+  state.issuedTimestampFrom = nextCursor;
   saveState(state);
 
-  // кратък лог
   fs.writeFileSync(
     "data/summary.json",
     JSON.stringify(
       {
-        pulled: invoices.length,
+        pulled_total: invoices.length,
+        fresh_after_dedupe: fresh.length,
         issuedTimestampFrom_used: issuedFrom,
-        newestIssuedTimestamp_found: newest
+        newestIssuedTimestamp_found: newest,
+        nextCursor_saved: nextCursor
       },
       null,
       2
     )
   );
 
-  console.log(`Pulled ${invoices.length} invoices. Cursor now: ${newest}`);
+  console.log(`Pulled ${invoices.length} invoices (${fresh.length} fresh). Next cursor: ${nextCursor}`);
 }
 
 await main();
