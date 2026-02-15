@@ -2,11 +2,12 @@ import fs from "fs";
 
 const endpoint = process.env.EF_ENDPOINT;
 const username = process.env.EF_USERNAME;
-const secretKey = process.env.EF_SECRETKEY;
+// secretKey е optional при WebServicesBG (може да е празен)
+const secretKey = process.env.EF_SECRETKEY || "";
 const token = process.env.EF_TOKEN;
 
-if (!endpoint || !username || !secretKey || !token) {
-  throw new Error("Missing EF_* env vars. Check GitHub Secrets.");
+if (!endpoint || !username || !token) {
+  throw new Error("Missing EF_ENDPOINT / EF_USERNAME / EF_TOKEN. Check GitHub Secrets.");
 }
 
 async function efCall(method, parameters = {}) {
@@ -29,24 +30,18 @@ async function efCall(method, parameters = {}) {
     throw new Error(`Non-JSON response (${res.status}). Saved to data/error.html`);
   }
 
-  if (!res.ok) {
+  if (!res.ok || (data?.response?.status && data.response.status !== "ok")) {
     fs.writeFileSync("data/error.json", JSON.stringify(data, null, 2));
-    throw new Error(`HTTP ${res.status}. Saved to data/error.json`);
+    throw new Error(`API error. Saved to data/error.json`);
   }
 
   return data;
 }
 
 async function main() {
-  // За начало: дърпаме списък (до 500) – само issued
-  const data = await efCall("SalesInvoiceList", {
-    status: "IssuedInvoice"
-  });
-
-  fs.mkdirSync("data", { recursive: true });
+  const data = await efCall("SalesInvoiceList", { status: "IssuedInvoice" });
   fs.writeFileSync("data/sample.json", JSON.stringify(data, null, 2));
-
-  console.log("OK. Saved response to data/sample.json and data/last_response.txt");
+  console.log("OK. Saved response to data/sample.json");
 }
 
 await main();
