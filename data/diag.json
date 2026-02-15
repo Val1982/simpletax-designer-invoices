@@ -2,7 +2,7 @@
   "endpoint": "https://eurofaktura.bg/WebServicesBG/API",
   "usernamePresent": true,
   "tokenPresent": true,
-  "secretKeyLen": 0,
+  "secretKeyLen": 32,
   "method": "SalesInvoiceList",
-  "httpStatus": 500
+  "httpStatus": 200
 }
