@@ -50,9 +50,13 @@ function pickInvoice(parsed) {
 
 function getBranding(inv) {
   const b = inv.branding || {};
-  const logo = pick(b, ["logoBase64", "logoUrl"], "");
-  const watermark = pick(b, ["watermarkBase64", "watermarkUrl"], "");
-  return { logo, watermark };
+  return {
+    logo: pick(b, ["logoBase64", "logoUrl"], ""),
+    watermark: pick(b, ["watermarkBase64", "watermarkUrl"], ""),
+    primary: pick(b, ["primaryColor"], "#27AE60"),
+    accent: pick(b, ["accentColor"], "#2ECC71"),
+    dark: pick(b, ["darkColor"], "#1F2A33")
+  };
 }
 
 function buildLogoHtml(inv) {
@@ -110,28 +114,47 @@ function buildItems(inv) {
   }).join("");
 }
 
+function injectBrandColors(template, branding) {
+  // Заменяме първия :root{...} блок с обновени цветове (ако структурата е същата)
+  // Ако не го намери — не чупим нищо.
+  const rootBlock = `:root{`;
+  const idx = template.indexOf(rootBlock);
+  if (idx < 0) return template;
+
+  // Вкарваме само 3-те променливи (зелено/акцент/тъмно)
+  // Останалите остават както са в template.
+  const patch = `:root{
+      --green:${branding.primary};
+      --green2:${branding.accent};
+      --dark:${branding.dark};`;
+
+  return template.replace(rootBlock, patch);
+}
+
 async function main() {
   const parsed = readData();
   const inv = pickInvoice(parsed);
 
-  const template = fs.readFileSync("preview/template.html", "utf8");
+  let template = fs.readFileSync("preview/template.html", "utf8");
 
-  // Buyer/Seller mappings (гъвкаво)
+  const branding = getBranding(inv);
+  template = injectBrandColors(template, branding);
+
+  // Buyer/Seller mappings
   const buyer = inv.buyer || inv.customer || inv.Client || {};
   const seller = inv.seller || inv.company || inv.Supplier || {};
 
-  // QR текст (fallback ако няма)
+  // QR text (fallback)
   const qrText = pick(inv, ["qrText", "paymentLink", "publicLink", "Links.Public", "links.public"], "");
   const qrSvg = qrText ? await buildQrSvg(qrText) : await buildQrSvg("https://simpletax.bg");
 
-  // Totals mappings (гъвкаво)
+  // Totals
   const currency = pick(inv, ["currency", "Currency"], "BGN");
   const subtotal = pick(inv, ["totals.subtotal", "subtotal", "Totals.Subtotal"], "");
   const vat = pick(inv, ["totals.vatTotal", "vatTotal", "Totals.Vat", "Totals.VAT"], "");
   const total = pick(inv, ["totals.grandTotal", "total", "Totals.Total", "grandTotal"], "");
 
-  // Payment mappings
-  const payment = inv.payment || inv.Payment || {};
+  // Payment
   const payBank = pick(inv, ["payment.bank", "Payment.Bank"], "") || pick(seller, ["bank", "Bank"], "");
   const payIban = pick(inv, ["payment.iban", "Payment.IBAN", "Payment.Iban"], "") || pick(seller, ["iban", "IBAN", "Iban"], "");
   const payBic = pick(inv, ["payment.bic", "Payment.BIC", "Payment.Bic"], "") || pick(seller, ["bic", "BIC", "Bic"], "");
