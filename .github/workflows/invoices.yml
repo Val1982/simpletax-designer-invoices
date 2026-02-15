@@ -3,7 +3,7 @@ name: Poll EuroFaktura
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/1 * * * *'
+    - cron: '*/30 * * * *'
 
 jobs:
   poll:
@@ -18,21 +18,35 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Run poll (allow fail)
-        continue-on-error: true
+      - name: Debug secret lengths (no values)
+        shell: bash
         env:
           EF_ENDPOINT: ${{ secrets.EF_ENDPOINT }}
           EF_USERNAME: ${{ secrets.EF_USERNAME }}
+          EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
+          EF_TOKEN: ${{ secrets.EF_TOKEN }}
+        run: |
+          echo "EF_ENDPOINT length: ${#EF_ENDPOINT}"
+          echo "EF_USERNAME length: ${#EF_USERNAME}"
+          echo "EF_SECRETKEY length: ${#EF_SECRETKEY}"
+          echo "EF_TOKEN length: ${#EF_TOKEN}"
+
+      - name: Run poll
+        env:
+          EF_ENDPOINT: ${{ secrets.EF_ENDPOINT }}
+          EF_USERNAME: ${{ secrets.EF_USERNAME }}
+          EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
           EF_TOKEN: ${{ secrets.EF_TOKEN }}
         run: |
           npm install
           npm run poll
 
-      - name: Commit results (even if poll fails)
+      - name: Commit results
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data state.json package-lock.json || true
           git commit -m "Auto: poll invoices (logs)" || echo "Nothing to commit"
-          git push
+          git pull --rebase origin main || true
+          git push || true
