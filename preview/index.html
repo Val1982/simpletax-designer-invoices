@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Invoice Preview</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#f6f7f9; margin:0; padding:24px;}
+    .page{max-width:980px; margin:0 auto; background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,.06);}
+    .top{display:flex; gap:18px; padding:22px; border-bottom:1px solid #eee;}
+    .left{flex:1;}
+    .right{width:320px;}
+    .badge{display:inline-block; padding:8px 12px; border-radius:999px; background:#0b3f2e; color:#fff; font-weight:700; letter-spacing:.3px;}
+    .h1{font-size:34px; font-weight:900; margin:12px 0 0; color:#111827;}
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:14px;}
+    .card{border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;}
+    .card .hdr{background:#0b3f2e; color:#fff; font-weight:800; padding:10px 12px;}
+    .card .bd{padding:10px 12px; font-size:13px; color:#111827; line-height:1.45;}
+    .muted{color:#6b7280; font-size:12px;}
+    table{width:100%; border-collapse:collapse;}
+    th,td{padding:10px 12px; border-bottom:1px solid #eef2f7; font-size:13px;}
+    th{background:#0b3f2e; color:#fff; text-align:left;}
+    .right{text-align:right;}
+    .totals{display:flex; justify-content:flex-end; padding:18px 22px;}
+    .totalBox{width:360px; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;}
+    .totalBox .hdr{background:#0b3f2e; color:#fff; font-weight:900; padding:12px;}
+    .totalBox .bd{padding:12px;}
+    .row{display:flex; justify-content:space-between; padding:6px 0; font-size:13px;}
+    .row b{font-size:14px;}
+    .foot{padding:18px 22px; color:#6b7280; font-size:12px; border-top:1px solid #eee;}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div class="left">
+        <span class="badge">SIMPLETAX • PREVIEW</span>
+        <div class="h1">ФАКТУРА № 0000000117</div>
+        <div class="muted">Издадена: 2026-01-30 • Падеж: 2026-02-06 • Плащане: BankTransfer</div>
+
+        <div class="grid">
+          <div class="card">
+            <div class="hdr">Клиент</div>
+            <div class="bd">
+              <b>ДЕНТАЛЕН ЦЕНТЪР ДЕНТ-ШУМЕН ЕООД</b><br/>
+              Пл. Възраждане 1<br/>
+              9700 град Шумен<br/>
+              BG • 000929108
+            </div>
+          </div>
+          <div class="card">
+            <div class="hdr">Банка</div>
+            <div class="bd">
+              IBAN: <b>BG60INTF40012076843552</b><br/>
+              Основание: <b>0000000117</b><br/>
+              Оператор: www.simpletax.bg Валери Петров<br/>
+              Issued: 2026-01-30 09:47:29
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="card">
+          <div class="hdr">Сума за плащане</div>
+          <div class="bd">
+            <div style="font-size:34px;font-weight:950;color:#0b3f2e;">332.34</div>
+            <div class="muted">EUR</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Код</th>
+          <th>Описание</th>
+          <th style="width:90px" class="right">Ед.</th>
+          <th style="width:90px" class="right">К-во</th>
+          <th style="width:140px" class="right">Цена</th>
+          <th style="width:140px" class="right">Сума</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+      <tr>
+        <td>000001</td>
+        <td><b>Административно обслужване</b><div class="muted"></div></td>
+        <td class="right">-</td>
+        <td class="right">1.00</td>
+        <td class="right">332.34</td>
+        <td class="right"><b>332.34</b></td>
+      </tr>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totalBox">
+        <div class="hdr">Общо</div>
+        <div class="bd">
+          <div class="row"><span>Нетно</span><b>332.34</b></div>
+          <div class="row"><span>ДДС</span><b>0.00</b></div>
+          <div class="row"><span>Документ</span><b>332.34</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      Това е preview файл, генериран от GitHub Actions. Не е официалният PDF от ЕвроФактура.
+    </div>
+  </div>
+</body>
+</html>
