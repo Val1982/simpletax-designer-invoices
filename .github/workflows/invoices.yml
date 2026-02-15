@@ -1,43 +1,81 @@
-name: Poll EuroFaktura
+name: Poll EuroFaktura + Render Preview
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: "*/15 * * * *" # на 15 минути
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "ef-poll-render"
+  cancel-in-progress: false
 
 jobs:
-  poll:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
-      - name: Run poll
+      - name: Install deps
+        run: npm ci || npm install
+
+      - name: Poll EuroFaktura
         env:
           EF_ENDPOINT: ${{ secrets.EF_ENDPOINT }}
           EF_USERNAME: ${{ secrets.EF_USERNAME }}
-          EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
           EF_TOKEN: ${{ secrets.EF_TOKEN }}
-        run: |
-          npm install
-          npm run poll
+          EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
+        run: node src/poll.js
 
-      - name: Render HTML preview
-        run: |
-          npm run render
+      - name: Render preview HTML
+        run: node src/render.js
 
-      - name: Commit results
-        if: always()
+      - name: Commit changes (data/state/preview)
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data preview state.json package-lock.json package.json src || true
-          git commit -m "Auto: poll + render preview" || echo "Nothing to commit"
+
+          # Вземи последните промени от remote, за да няма "fetch first"
           git pull --rebase origin main || true
-          git push || true
+
+          # Ако няма промени - не комитвай
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Auto: poll + render preview"
+          git push origin HEAD:main
+
+      # --- GitHub Pages (preview/) ---
+      # Качва preview/ като artifact за Pages
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: preview
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
