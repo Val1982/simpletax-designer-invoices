@@ -4,16 +4,15 @@ const endpoint = process.env.EF_ENDPOINT;
 const username = process.env.EF_USERNAME;
 const token = process.env.EF_TOKEN;
 
+// ВАЖНО: secretKey трябва да присъства в JSON, дори да е празен стринг
+const secretKey = process.env.EF_SECRETKEY || "";
 
 if (!endpoint || !username || !token) {
   throw new Error("Missing EF_ENDPOINT / EF_USERNAME / EF_TOKEN. Check GitHub Secrets.");
 }
 
 async function efCall(method, parameters = {}) {
-  const payload = { username, token, method, parameters };
-  if (secretKey && String(secretKey).trim() !== "") {
-    payload.secretKey = secretKey;
-  }
+  const payload = { username, secretKey, token, method, parameters };
 
   const res = await fetch(endpoint, {
     method: "POST",
