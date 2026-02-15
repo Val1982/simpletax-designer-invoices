@@ -1,0 +1,8 @@
+{
+  "name": "simpletax-designer-invoices",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "poll": "node src/poll.js"
+  }
+}
