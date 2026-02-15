@@ -1,8 +1,10 @@
 {
   "name": "simpletax-designer-invoices",
-  "private": true,
+  "version": "1.0.0",
   "type": "module",
+  "private": true,
   "scripts": {
-    "poll": "node src/poll.js"
+    "poll": "node src/poll.js",
+    "render": "node src/render.js"
   }
 }
