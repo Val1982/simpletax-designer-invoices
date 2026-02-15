@@ -17,20 +17,9 @@
     }
 
     *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      background:#0b1220;
-      font-family:var(--font);
-      color:var(--text);
-    }
+    body{ margin:0; background:#0b1220; font-family:var(--font); color:var(--text); }
 
-    .stage{
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      padding:24px;
-    }
+    .stage{ min-height:100vh; display:flex; justify-content:center; align-items:flex-start; padding:24px; }
 
     .page{
       width:210mm;
@@ -42,6 +31,42 @@
       box-shadow:0 20px 60px rgba(0,0,0,.45);
     }
 
+    /* ===== decorative PSD shapes ===== */
+    .shape-dark{
+      position:absolute;
+      top:-40mm;
+      left:-45mm;
+      width:120mm;
+      height:95mm;
+      background:var(--dark);
+      border-radius:60mm;
+      transform:rotate(-12deg);
+      opacity:.98;
+      z-index:0;
+    }
+    .shape-green{
+      position:absolute;
+      top:-55mm;
+      right:-55mm;
+      width:145mm;
+      height:110mm;
+      background:linear-gradient(135deg,var(--green),var(--green2));
+      border-radius:80mm;
+      transform:rotate(14deg);
+      opacity:.98;
+      z-index:0;
+    }
+    .shape-green::after{
+      content:"";
+      position:absolute;
+      inset:18mm 22mm auto auto;
+      width:55mm;
+      height:55mm;
+      background:rgba(255,255,255,.08);
+      border-radius:999px;
+      filter:blur(0.2px);
+    }
+
     .watermark{
       position:absolute;
       inset:-12mm;
@@ -51,6 +76,7 @@
       background-position:center;
       background-size:72%;
       transform:rotate(-10deg);
+      z-index:0;
     }
 
     .content{
@@ -106,7 +132,7 @@
       font-weight:700;
     }
 
-    /* ===== RIGHT CAPSULE BAR (PS-like) ===== */
+    /* ===== RIGHT CAPSULE BAR ===== */
     .contact-bar{
       position:relative;
       height:20mm;
@@ -117,13 +143,9 @@
       justify-content:space-between;
       padding:0 8mm 0 7mm;
       color:#fff;
-
-      /* stronger PS look */
-      background:
-        linear-gradient(90deg, var(--dark) 0%, var(--dark) 60%, var(--green) 60%, var(--green2) 100%);
+      background:linear-gradient(90deg, var(--dark) 0%, var(--dark) 60%, var(--green) 60%, var(--green2) 100%);
       box-shadow:0 10px 24px rgba(0,0,0,.25);
     }
-    /* thin glossy line like PSD */
     .contact-bar::after{
       content:"";
       position:absolute;
@@ -180,18 +202,10 @@
       padding:0 6mm;
     }
     .date-cell:last-child{ border-right:none; }
-    .date-label{
-      font-size:10.5px;
-      color:var(--muted);
-      font-weight:800;
-    }
-    .date-value{
-      margin-top:3px;
-      font-weight:900;
-      color:var(--text);
-    }
+    .date-label{ font-size:10.5px; color:var(--muted); font-weight:800; }
+    .date-value{ margin-top:3px; font-weight:900; color:var(--text); }
 
-    /* ===== ITEMS HEADER (no gaps) ===== */
+    /* ===== ITEMS HEADER ===== */
     .items-head{
       margin-top:12mm;
       display:grid;
@@ -234,23 +248,9 @@
       min-height:18mm;
     }
     .row:last-child{ border-bottom:none; }
-
-    .desc{
-      padding:13px 16px;
-    }
-    .desc .title{
-      font-weight:900;
-      font-size:15px;
-      margin-bottom:6px;
-      letter-spacing:.2px;
-    }
-    .desc .sub{
-      color:var(--muted);
-      font-size:11.5px;
-      line-height:1.35;
-      font-weight:600;
-    }
-
+    .desc{ padding:13px 16px; }
+    .desc .title{ font-weight:900; font-size:15px; margin-bottom:6px; letter-spacing:.2px; }
+    .desc .sub{ color:var(--muted); font-size:11.5px; line-height:1.35; font-weight:600; }
     .nums{
       padding:13px 16px;
       display:grid;
@@ -261,7 +261,6 @@
       font-size:13px;
       color:#1c2630;
     }
-    .nums .price{ font-weight:900; }
 
     /* ===== BOTTOM ===== */
     .bottom{
@@ -347,15 +346,15 @@
 <body>
   <div class="stage">
     <div class="page">
+      <div class="shape-dark"></div>
+      <div class="shape-green"></div>
+
       {{WATERMARK}}
 
       <div class="content">
         <div class="top">
-          <!-- LEFT -->
           <div>
-            <div class="logo-wrap">
-              {{LOGO}}
-            </div>
+            <div class="logo-wrap">{{LOGO}}</div>
 
             <div class="to-block">
               <div class="to-label">INVOICE TO</div>
@@ -368,7 +367,6 @@
             </div>
           </div>
 
-          <!-- RIGHT -->
           <div>
             <div class="contact-bar">
               <div class="contact-left">
@@ -397,7 +395,6 @@
           </div>
         </div>
 
-        <!-- ITEMS -->
         <div class="items-head">
           <div class="left">Item Description</div>
           <div class="right">
@@ -407,11 +404,8 @@
           </div>
         </div>
 
-        <div class="items">
-          {{ITEM_ROWS}}
-        </div>
+        <div class="items">{{ITEM_ROWS}}</div>
 
-        <!-- BOTTOM -->
         <div class="bottom">
           <div class="payment-card">
             <h3>PAYMENT METHOD</h3>
