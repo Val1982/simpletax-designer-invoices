@@ -1,5 +1,5 @@
 {
-  "endpoint": "https://eurofaktura.bg/WebServicesBG/API\n",
+  "endpoint": "https://eurofaktura.bg/WebServicesBG/API",
   "usernamePresent": true,
   "tokenPresent": true,
   "secretKeyLen": 0,
