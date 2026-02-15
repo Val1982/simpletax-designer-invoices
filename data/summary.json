@@ -1,7 +1,7 @@
 {
   "pulled_total": 1,
-  "fresh_after_dedupe": 1,
+  "fresh_after_dedupe": 0,
   "issuedTimestampFrom_used": "2026-01-30 09:47:29",
   "newestIssuedTimestamp_found": "2026-01-30 09:47:29",
-  "nextCursor_saved": "2026-01-30 09:47:29"
+  "nextCursor_saved": "2026-01-30 09:47:30"
 }
