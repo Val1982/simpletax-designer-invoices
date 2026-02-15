@@ -3,7 +3,7 @@ name: Poll EuroFaktura
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/1 * * * *'
 
 jobs:
   poll:
@@ -23,7 +23,6 @@ jobs:
         env:
           EF_ENDPOINT: ${{ secrets.EF_ENDPOINT }}
           EF_USERNAME: ${{ secrets.EF_USERNAME }}
-          EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
           EF_TOKEN: ${{ secrets.EF_TOKEN }}
         run: |
           npm install
