@@ -3,8 +3,8 @@
     "status": "error",
     "release": "1031.3",
     "url": "WebServicesBG",
-    "serverTime": "2026-02-15T12:47:50",
+    "serverTime": "2026-02-15T12:59:06",
     "apiMethod": null,
-    "description": "Невалидно потребителско име или парола."
+    "description": "API user password is missing in JSON"
   }
 }
