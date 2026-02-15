@@ -25,7 +25,10 @@ async function efCall(method, parameters = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${JSON.stringify(data).slice(0, 500)}`);
+    fs.mkdirSync("data", { recursive: true });
+    fs.writeFileSync("data/error.html", text);
+    throw new Error(`Non-JSON response (${res.status}). Saved full response to data/error.html`);
+
   }
   return data;
 }
