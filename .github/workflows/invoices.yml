@@ -17,7 +17,8 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Run poll
+            - name: Run poll (allow fail)
+        continue-on-error: true
         env:
           EF_ENDPOINT: ${{ secrets.EF_ENDPOINT }}
           EF_USERNAME: ${{ secrets.EF_USERNAME }}
@@ -27,10 +28,11 @@ jobs:
           npm install
           npm run poll
 
-      - name: Commit results
+      - name: Commit results (even if poll fails)
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/sample.json state.json || true
-          git commit -m "Auto: poll invoices" || echo "Nothing to commit"
+          git add data/error.html data/sample.json state.json || true
+          git commit -m "Auto: poll invoices (logs)" || echo "Nothing to commit"
           git push
