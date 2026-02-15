@@ -6,5 +6,8 @@
   "scripts": {
     "poll": "node src/poll.js",
     "render": "node src/render.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }
