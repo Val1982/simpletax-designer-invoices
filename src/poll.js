@@ -10,71 +10,42 @@ if (!endpoint || !username || !secretKey || !token) {
 }
 
 async function efCall(method, parameters = {}) {
+  const paramsXml = Object.entries(parameters)
+    .map(([k, v]) => `<parameter name="${k}" value="${String(v).replaceAll('"', "&quot;")}" />`)
+    .join("\n");
+
+  const xml =
+`<?xml version="1.0" encoding="utf-8"?>
+<request>
+  <login username="${username}" secretKey="${secretKey}" token="${token}" />
+  <method name="${method}">
+    ${paramsXml}
+  </method>
+</request>`;
+
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, secretKey, token, method, parameters })
+    headers: { "Content-Type": "application/octet-stream" },
+    body: xml
   });
 
   const text = await res.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    fs.mkdirSync("data", { recursive: true });
-    fs.writeFileSync("data/error.html", text);
-    throw new Error(`Non-JSON response (${res.status}). Saved full response to data/error.html`);
 
-  }
+  fs.mkdirSync("data", { recursive: true });
+  fs.writeFileSync("data/last_response.txt", text);
 
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${JSON.stringify(data).slice(0, 500)}`);
-  }
-  return data;
-}
-
-function readState() {
-  try {
-    return JSON.parse(fs.readFileSync("state.json", "utf8"));
-  } catch {
-    return { lastIssuedTimestamp: "2026-01-01 00:00:00" };
-  }
-}
-
-function writeState(state) {
-  fs.writeFileSync("state.json", JSON.stringify(state, null, 2));
+  return { status: res.status, body: text };
 }
 
 async function main() {
-  const state = readState();
+  console.log("Calling EuroFaktura API...");
 
-  // тестово: дърпаме фактури от cursor нататък
   const resp = await efCall("SalesInvoiceList", {
-    issuedTimestampFrom: state.lastIssuedTimestamp,
     status: "IssuedInvoice"
   });
 
-  // записваме каквото върне за да видим структурата
-  fs.mkdirSync("data", { recursive: true });
-  fs.writeFileSync("data/sample.json", JSON.stringify(resp, null, 2));
-
-  // пробваме да намерим docs в най-честите структури
-  const list = resp?.result ?? resp?.Result ?? resp?.documents ?? resp?.Documents ?? resp;
-  const docs = Array.isArray(list) ? list : (list?.Documents ?? list?.documents ?? []);
-
-  // обновяваме cursor = max issuedTimestamp
-  let maxTs = state.lastIssuedTimestamp;
-  for (const d of docs) {
-    const ts = d.issuedTimestamp;
-    if (ts && String(ts) > String(maxTs)) maxTs = ts;
-  }
-
-  if (String(maxTs) > String(state.lastIssuedTimestamp)) {
-    state.lastIssuedTimestamp = maxTs;
-    writeState(state);
-  }
-
-  console.log(`Fetched ${docs.length} invoices. Cursor=${state.lastIssuedTimestamp}`);
+  console.log("HTTP status:", resp.status);
+  console.log("Response saved to data/last_response.txt");
 }
 
 await main();
