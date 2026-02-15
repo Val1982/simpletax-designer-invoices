@@ -1,136 +1,185 @@
 import fs from "fs";
+import path from "path";
 
-const endpoint = process.env.EF_ENDPOINT;
-const username = process.env.EF_USERNAME;
-const secretKey = (process.env.EF_SECRETKEY ?? "");
-const token = process.env.EF_TOKEN;
-
-if (!endpoint || !username || !token) throw new Error("Missing EF_ENDPOINT / EF_USERNAME / EF_TOKEN.");
-if (!secretKey) throw new Error("EF_SECRETKEY missing/empty.");
-
+const DATA_DIR = "data";
 const STATE_FILE = "state.json";
+const LAST_RESPONSE_FILE = path.join(DATA_DIR, "last_response.txt");
+const DIAG_FILE = path.join(DATA_DIR, "diag.json");
 
-function loadState() {
-  if (!fs.existsSync(STATE_FILE)) {
-    return { issuedTimestampFrom: "2026-01-01 00:00:00", seenDocumentIDs: [] };
+function ensureDir(p) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
+
+function readJsonSafe(filePath, fallback) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return fallback;
   }
-  const s = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
-  if (!Array.isArray(s.seenDocumentIDs)) s.seenDocumentIDs = [];
-  if (!s.issuedTimestampFrom) s.issuedTimestampFrom = "2026-01-01 00:00:00";
-  return s;
 }
 
-function saveState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+function writeJson(filePath, obj) {
+  fs.writeFileSync(filePath, JSON.stringify(obj, null, 2), "utf8");
 }
 
-async function efCall(method, parameters = {}) {
-  const payload = { username, secretKey, token, method, parameters };
+function writeText(filePath, text) {
+  fs.writeFileSync(filePath, text ?? "", "utf8");
+}
+
+function isNoDocumentsFound(json) {
+  const desc = json?.response?.description || "";
+  return desc.includes("#noDocumentsFound") || desc.toLowerCase().includes("nodocumentsfound");
+}
+
+async function efCall({ endpoint, username, secretKey, token, method, parameters }) {
+  const payload = {
+    username,
+    secretKey: secretKey ?? "",
+    token,
+    method,
+    parameters: parameters ?? {},
+  };
 
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 
   const text = await res.text();
+  writeText(LAST_RESPONSE_FILE, text);
 
-  fs.mkdirSync("data", { recursive: true });
-  fs.writeFileSync("data/last_response.txt", text);
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // Ако връща HTML/не-JSON, това е реален проблем
+    throw new Error(`Non-JSON response (${res.status}): ${text.slice(0, 300)}`);
+  }
 
-  const json = JSON.parse(text);
+  // Ако API връща "noDocumentsFound" -> това НЕ е грешка, а празен резултат
+  if (json?.response?.status === "error" && isNoDocumentsFound(json)) {
+    return { ok: true, empty: true, json };
+  }
 
   if (json?.response?.status !== "ok") {
-    fs.writeFileSync("data/error.json", JSON.stringify(json, null, 2));
     throw new Error(json?.response?.description || "API error");
   }
 
-  return json;
+  return { ok: true, empty: false, json };
 }
 
-function maxTimestamp(a, b) {
-  if (!a) return b;
-  if (!b) return a;
-  return a > b ? a : b;
+function toIsoLikeEf(ts) {
+  // приемаме, че ts вече е във формат "YYYY-MM-DD HH:mm:ss"
+  return ts;
 }
 
-// "YYYY-MM-DD HH:mm:ss" -> +1 second
+function maxIssuedTimestamp(docs) {
+  let max = null;
+  for (const d of docs || []) {
+    const t = d?.issuedTimestamp;
+    if (!t) continue;
+    if (!max || t > max) max = t;
+  }
+  return max;
+}
+
 function addOneSecond(ts) {
-  const iso = ts.replace(" ", "T") + "Z";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return ts;
+  // ts: "YYYY-MM-DD HH:mm:ss"
+  // добавяме 1 секунда, за да не теглим последния документ пак
+  const [datePart, timePart] = ts.split(" ");
+  const [Y, M, D] = datePart.split("-").map(Number);
+  const [hh, mm, ss] = timePart.split(":").map(Number);
 
-  d.setUTCSeconds(d.getUTCSeconds() + 1);
+  const dt = new Date(Date.UTC(Y, M - 1, D, hh, mm, ss));
+  dt.setUTCSeconds(dt.getUTCSeconds() + 1);
 
   const pad = (n) => String(n).padStart(2, "0");
-  return (
-    d.getUTCFullYear() +
-    "-" + pad(d.getUTCMonth() + 1) +
-    "-" + pad(d.getUTCDate()) +
-    " " + pad(d.getUTCHours()) +
-    ":" + pad(d.getUTCMinutes()) +
-    ":" + pad(d.getUTCSeconds())
-  );
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())} ${pad(
+    dt.getUTCHours()
+  )}:${pad(dt.getUTCMinutes())}:${pad(dt.getUTCSeconds())}`;
 }
 
 async function main() {
-  const state = loadState();
-  const issuedFrom = state.issuedTimestampFrom;
+  ensureDir(DATA_DIR);
 
-  const json = await efCall("SalesInvoiceList", {
-    issuedTimestampFrom: issuedFrom,
-    status: "IssuedInvoice"
+  const endpoint = process.env.EF_ENDPOINT || "https://eurofaktura.bg/WebServicesBG/API";
+  const username = process.env.EF_USERNAME;
+  const token = process.env.EF_TOKEN;
+  const secretKey = process.env.EF_SECRETKEY ?? ""; // трябва да е string, дори празен
+
+  if (!username || !token) {
+    throw new Error("Missing EF_USERNAME or EF_TOKEN in GitHub Secrets");
+  }
+
+  // state.json: { "lastIssuedTimestamp": "YYYY-MM-DD HH:mm:ss" }
+  const state = readJsonSafe(STATE_FILE, { lastIssuedTimestamp: "2026-01-01 00:00:00" });
+  const issuedFrom = toIsoLikeEf(state.lastIssuedTimestamp || "2026-01-01 00:00:00");
+
+  // Диагностика
+  writeJson(DIAG_FILE, {
+    endpoint,
+    usernamePresent: !!username,
+    tokenPresent: !!token,
+    secretKeyLen: (secretKey || "").length,
+    method: "SalesInvoiceList",
+    issuedTimestampFrom_used: issuedFrom,
   });
 
-  const invoices = Array.isArray(json?.response?.result) ? json.response.result : [];
+  const { empty, json } = await efCall({
+    endpoint,
+    username,
+    secretKey,
+    token,
+    method: "SalesInvoiceList",
+    parameters: {
+      issuedTimestampFrom: issuedFrom,
+    },
+  });
 
-  // dedupe по documentID
-  const seen = new Set(state.seenDocumentIDs);
-  const fresh = [];
-  for (const inv of invoices) {
-    const id = inv.documentID || inv.documentId || inv.id;
-    if (!id) continue;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    fresh.push(inv);
+  // Ако няма нови документи -> зелено, нищо не пипаме по cursor-a
+  if (empty) {
+    writeJson(path.join(DATA_DIR, "summary.json"), {
+      pulled_total: 0,
+      fresh_after_dedupe: 0,
+      issuedTimestampFrom_used: issuedFrom,
+      newestIssuedTimestamp_found: null,
+      note: "No new documents (noDocumentsFound). This is OK.",
+    });
+    console.log("OK: No new documents since cursor:", issuedFrom);
+    return;
   }
 
-  const runStamp = new Date().toISOString().replace(/[:.]/g, "-");
-  fs.writeFileSync(`data/invoices_${runStamp}.json`, JSON.stringify(fresh, null, 2));
+  const docs = json?.response?.result || [];
+  const newest = maxIssuedTimestamp(docs);
 
-  // най-нов timestamp от всички върнати
-  let newest = issuedFrom;
-  for (const inv of invoices) {
-    newest = maxTimestamp(newest, inv.issuedTimestamp);
+  // Записваме резултат
+  writeJson(path.join(DATA_DIR, "invoices.json"), docs);
+
+  // Обновяваме cursor-а само ако има newest
+  if (newest) {
+    const nextCursor = addOneSecond(newest);
+    writeJson(STATE_FILE, { lastIssuedTimestamp: nextCursor });
+
+    writeJson(path.join(DATA_DIR, "summary.json"), {
+      pulled_total: docs.length,
+      issuedTimestampFrom_used: issuedFrom,
+      newestIssuedTimestamp_found: newest,
+      nextCursor_saved: nextCursor,
+    });
+
+    console.log("Pulled:", docs.length, "newest:", newest, "nextCursor:", nextCursor);
+  } else {
+    // Няма issuedTimestamp в резултата (рядко), не пипаме state
+    writeJson(path.join(DATA_DIR, "summary.json"), {
+      pulled_total: docs.length,
+      issuedTimestampFrom_used: issuedFrom,
+      newestIssuedTimestamp_found: null,
+      note: "No issuedTimestamp in returned docs; state not changed.",
+    });
+    console.log("Pulled:", docs.length, "but no issuedTimestamp found. State unchanged.");
   }
-
-  // ВАЖНО: inclusive -> винаги +1 секунда
-  const nextCursor = addOneSecond(newest);
-
-  // ограничаваме seen IDs
-  const seenArr = Array.from(seen);
-  const MAX_SEEN = 2000;
-  state.seenDocumentIDs = seenArr.slice(Math.max(0, seenArr.length - MAX_SEEN));
-
-  state.issuedTimestampFrom = nextCursor;
-  saveState(state);
-
-  fs.writeFileSync(
-    "data/summary.json",
-    JSON.stringify(
-      {
-        pulled_total: invoices.length,
-        fresh_after_dedupe: fresh.length,
-        issuedTimestampFrom_used: issuedFrom,
-        newestIssuedTimestamp_found: newest,
-        nextCursor_saved: nextCursor
-      },
-      null,
-      2
-    )
-  );
-
-  console.log(`Pulled ${invoices.length} invoices (${fresh.length} fresh). Next cursor: ${nextCursor}`);
 }
 
 await main();
