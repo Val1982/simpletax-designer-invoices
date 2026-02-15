@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import QRCode from "qrcode";
 
 function escapeHtml(s = "") {
@@ -44,7 +45,7 @@ function readData() {
 
 function pickInvoice(parsed) {
   if (Array.isArray(parsed)) return parsed[0] || {};
-  if (parsed && parsed.invoice) return parsed.invoice;
+  if (parsed && typeof parsed === "object" && parsed.invoice) return parsed.invoice;
   return parsed || {};
 }
 
@@ -55,7 +56,7 @@ function getBranding(inv) {
     watermark: pick(b, ["watermarkBase64", "watermarkUrl"], ""),
     primary: pick(b, ["primaryColor"], "#27AE60"),
     accent: pick(b, ["accentColor"], "#2ECC71"),
-    dark: pick(b, ["darkColor"], "#1F2A33")
+    dark: pick(b, ["darkColor"], "#1F2A33"),
   };
 }
 
@@ -115,14 +116,10 @@ function buildItems(inv) {
 }
 
 function injectBrandColors(template, branding) {
-  // Заменяме първия :root{...} блок с обновени цветове (ако структурата е същата)
-  // Ако не го намери — не чупим нищо.
   const rootBlock = `:root{`;
   const idx = template.indexOf(rootBlock);
   if (idx < 0) return template;
 
-  // Вкарваме само 3-те променливи (зелено/акцент/тъмно)
-  // Останалите остават както са в template.
   const patch = `:root{
       --green:${branding.primary};
       --green2:${branding.accent};
@@ -131,16 +128,44 @@ function injectBrandColors(template, branding) {
   return template.replace(rootBlock, patch);
 }
 
+function applyReplacements(template, replacements) {
+  let html = template;
+  for (const [k, v] of Object.entries(replacements)) {
+    html = html.replaceAll(k, v);
+  }
+  return html;
+}
+
+function ensureDir(filePath) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+}
+
 async function main() {
   const parsed = readData();
   const inv = pickInvoice(parsed);
 
-  let template = fs.readFileSync("preview/template.html", "utf8");
-
   const branding = getBranding(inv);
-  template = injectBrandColors(template, branding);
 
-  // Buyer/Seller mappings
+  // Templates
+  const previewTemplatePath = "preview/template.html";
+  const exportTemplatePath = "export/eurofaktura-template.html";
+
+  if (!fs.existsSync(previewTemplatePath)) {
+    console.error(`Missing ${previewTemplatePath}`);
+    process.exit(1);
+  }
+  if (!fs.existsSync(exportTemplatePath)) {
+    console.error(`Missing ${exportTemplatePath}`);
+    process.exit(1);
+  }
+
+  let previewTemplate = fs.readFileSync(previewTemplatePath, "utf8");
+  let exportTemplate = fs.readFileSync(exportTemplatePath, "utf8");
+
+  previewTemplate = injectBrandColors(previewTemplate, branding);
+  exportTemplate = injectBrandColors(exportTemplate, branding);
+
+  // Buyer/Seller mappings (гъвкаво)
   const buyer = inv.buyer || inv.customer || inv.Client || {};
   const seller = inv.seller || inv.company || inv.Supplier || {};
 
@@ -148,13 +173,13 @@ async function main() {
   const qrText = pick(inv, ["qrText", "paymentLink", "publicLink", "Links.Public", "links.public"], "");
   const qrSvg = qrText ? await buildQrSvg(qrText) : await buildQrSvg("https://simpletax.bg");
 
-  // Totals
+  // Totals mappings (гъвкаво)
   const currency = pick(inv, ["currency", "Currency"], "BGN");
   const subtotal = pick(inv, ["totals.subtotal", "subtotal", "Totals.Subtotal"], "");
   const vat = pick(inv, ["totals.vatTotal", "vatTotal", "Totals.Vat", "Totals.VAT"], "");
   const total = pick(inv, ["totals.grandTotal", "total", "Totals.Total", "grandTotal"], "");
 
-  // Payment
+  // Payment mappings
   const payBank = pick(inv, ["payment.bank", "Payment.Bank"], "") || pick(seller, ["bank", "Bank"], "");
   const payIban = pick(inv, ["payment.iban", "Payment.IBAN", "Payment.Iban"], "") || pick(seller, ["iban", "IBAN", "Iban"], "");
   const payBic = pick(inv, ["payment.bic", "Payment.BIC", "Payment.Bic"], "") || pick(seller, ["bic", "BIC", "Bic"], "");
@@ -190,13 +215,21 @@ async function main() {
     "{{TOTAL}}": money(total, currency),
   };
 
-  let html = template;
-  for (const [k, v] of Object.entries(replacements)) {
-    html = html.replaceAll(k, v);
-  }
+  // Generate preview
+  const previewHtml = applyReplacements(previewTemplate, replacements);
+  const previewOut = "preview/index.html";
+  ensureDir(previewOut);
+  fs.writeFileSync(previewOut, previewHtml, "utf8");
 
-  fs.writeFileSync("preview/index.html", html, "utf8");
-  console.log("Preview generated.");
+  // Generate export (filled)
+  const exportHtml = applyReplacements(exportTemplate, replacements);
+  const exportOut = "export/eurofaktura-filled.html";
+  ensureDir(exportOut);
+  fs.writeFileSync(exportOut, exportHtml, "utf8");
+
+  console.log("Generated:");
+  console.log(" - preview/index.html");
+  console.log(" - export/eurofaktura-filled.html");
 }
 
 main().catch((e) => {
