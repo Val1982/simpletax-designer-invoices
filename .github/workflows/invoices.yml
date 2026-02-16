@@ -43,31 +43,52 @@ jobs:
       - name: Render preview HTML
         run: node src/render.js
 
-      - name: Commit changes (data/state/preview)
+      # ✅ НОВО: генерира archive/
+      - name: Generate archive
+        run: npm run archive
+
+      - name: Commit changes (data/state/preview/archive)
         run: |
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Вземи последните промени от remote, за да няма "fetch first"
           git pull --rebase origin main || true
 
-          # Ако няма промени - не комитвай
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
 
-          git commit -m "Auto: poll + render preview"
+          git commit -m "Auto: poll + render + archive"
           git push origin HEAD:main
 
-      # --- GitHub Pages (preview/) ---
-      # Качва preview/ като artifact за Pages
+      # ✅ НОВО: сглобяваме пакет за Pages: preview (root) + archive (/archive)
+      - name: Build Pages bundle (public/)
+        run: |
+          set -e
+          rm -rf public
+          mkdir -p public/archive
+
+          # preview -> root
+          if [ -d "preview" ]; then
+            cp -R preview/. public/
+          fi
+
+          # archive -> /archive
+          if [ -d "archive" ]; then
+            cp -R archive/. public/archive/
+          fi
+
+          # базова проверка
+          ls -la public
+          ls -la public/archive || true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: preview
+          path: public
 
   deploy:
     needs: build
