@@ -18,7 +18,7 @@
       color:var(--text);
     }
     .wrap{ max-width:1200px; margin:24px auto; padding:0 16px; }
-    h1{ margin:0 0 14px; font-size:22px; }
+    h1{ margin:0 0 14px; font-size:22px; text-align:center; }
     .bar{ display:flex; gap:10px; align-items:center; margin-bottom:14px; }
     .search{
       flex:1; background:rgba(255,255,255,.06); border:1px solid var(--line);
@@ -27,6 +27,7 @@
     .btn{
       background:var(--btn); border:1px solid var(--line); color:var(--text);
       padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:700;
+      white-space:nowrap;
     }
     .btn:hover{ border-color:rgba(255,255,255,.16); }
     .btn.acc{ background:linear-gradient(90deg, var(--acc), #1fb863); border-color:transparent; color:#062012; }
@@ -59,6 +60,7 @@
     }
     .count{ color:var(--mut); font-size:12px; }
     .leftgroup{ display:flex; gap:10px; align-items:center; }
+    .small{ font-size:12px; color:var(--mut); }
   </style>
 </head>
 <body>
@@ -99,12 +101,14 @@
     </div>
 
     <div class="mut" id="foot"></div>
+    <div class="small" style="margin-top:6px; opacity:.9">
+      Съвет: ако браузърът блокира автоматичния print, натисни Print в новия таб.
+    </div>
   </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
-
-  function norm(s){ return (s ?? "").toString().toLowerCase(); }
+  const norm = (s) => (s ?? "").toString().toLowerCase();
 
   async function loadIndex(){
     const res = await fetch("./invoices.index.json?_=" + Date.now());
@@ -140,11 +144,15 @@
       return;
     }
 
-    const w = window.open("", "_blank");
     const docs = ids.map(id => "./html/" + encodeURIComponent(id) + ".html");
 
-    // Създаваме страница, която вкарва фактурите една след друга чрез iframe.
-    // Когато заредят - печат.
+    const w = window.open("", "_blank");
+    if(!w){
+      alert("Поп-ъпът е блокиран. Разреши pop-ups за този сайт и пробвай пак.");
+      return;
+    }
+
+    // 1) пишем само HTML + iframe-и (без вложен <script> в string)
     w.document.open();
     w.document.write(`<!doctype html>
 <html>
@@ -163,21 +171,27 @@
 </head>
 <body>
   ${docs.map(src => `<div class="page"><iframe src="${src}"></iframe></div>`).join("")}
-  <script>
-    const frames = Array.from(document.querySelectorAll("iframe"));
-    let loaded = 0;
-    frames.forEach(f => {
-      f.addEventListener("load", () => {
-        loaded++;
-        if(loaded === frames.length){
-          setTimeout(() => window.print(), 500);
-        }
-      });
-    });
-  </script>
 </body>
 </html>`);
     w.document.close();
+
+    // 2) добавяме JS като script елемент (без да чупим </script>)
+    const s = w.document.createElement("script");
+    s.textContent = `
+      (function(){
+        const frames = Array.from(document.querySelectorAll("iframe"));
+        let loaded = 0;
+        frames.forEach(f => {
+          f.addEventListener("load", () => {
+            loaded++;
+            if(loaded === frames.length){
+              setTimeout(() => window.print(), 500);
+            }
+          });
+        });
+      })();
+    `;
+    w.document.body.appendChild(s);
   }
 
   async function render(){
@@ -198,7 +212,6 @@
     $("checkAll").checked = false;
     updateSelCount();
 
-    // listeners
     document.querySelectorAll(".sel").forEach(chk => chk.addEventListener("change", updateSelCount));
   }
 
@@ -211,9 +224,7 @@
     updateSelCount();
   });
 
-  $("printSelected").addEventListener("click", () => {
-    openBatchPrint(getSelectedIds());
-  });
+  $("printSelected").addEventListener("click", () => openBatchPrint(getSelectedIds()));
 
   render().catch(e => alert(e.message));
 </script>
