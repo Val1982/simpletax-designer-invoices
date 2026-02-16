@@ -3,7 +3,7 @@ name: Poll EuroFaktura + Render Preview
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 * * * *" # на 15 минути
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: write
@@ -38,15 +38,29 @@ jobs:
           EF_USERNAME: ${{ secrets.EF_USERNAME }}
           EF_TOKEN: ${{ secrets.EF_TOKEN }}
           EF_SECRETKEY: ${{ secrets.EF_SECRETKEY }}
-        run: node src/poll.js
+        run: npm run poll
 
       - name: Render preview HTML
-        run: node src/render.js
+        run: npm run render
 
-      - name: Generate archive
+      # ✅ ВАЖНО: генерираме архива в preview/archive/*
+      - name: Build archive (preview/archive)
         run: npm run archive
 
-      - name: Commit changes (data/state/preview/archive)
+      # ✅ ДИАГНОСТИКА: да видим какво точно ще качим
+      - name: Debug - list preview outputs
+        run: |
+          set -e
+          echo "---- preview tree ----"
+          ls -la preview || true
+          echo "---- preview/archive ----"
+          ls -la preview/archive || true
+          echo "---- preview/archive/html count ----"
+          ls -1 preview/archive/html 2>/dev/null | wc -l || true
+          echo "---- show first 3 lines of preview/archive/index.html ----"
+          head -n 5 preview/archive/index.html || true
+
+      - name: Commit changes (data/state/preview)
         run: |
           set -e
           git config user.name "github-actions[bot]"
@@ -56,45 +70,18 @@ jobs:
 
           git add -A
           if git diff --cached --quiet; then
-            echo "No changes to commit. Continuing to deploy..."
-          else
-            git commit -m "Auto: poll + render + archive"
-            git push origin HEAD:main
+            echo "No changes to commit."
+            exit 0
           fi
 
-      # ✅ Пакет за Pages: preview (root) + archive (/archive) + data (/data)
-      - name: Build Pages bundle (public/)
-        run: |
-          set -e
-          rm -rf public
-          mkdir -p public/archive public/data
+          git commit -m "Auto: poll + render + archive"
+          git push origin HEAD:main
 
-          # preview -> root
-          if [ -d "preview" ]; then
-            cp -R preview/. public/
-          fi
-
-          # archive -> /archive
-          if [ -d "archive" ]; then
-            cp -R archive/. public/archive/
-          fi
-
-          # ✅ data -> /data (за да можем да виждаме invoices.json)
-          if [ -d "data" ]; then
-            cp -R data/. public/data/
-          fi
-
-          echo "== public root =="
-          ls -la public || true
-          echo "== public/archive =="
-          ls -la public/archive || true
-          echo "== public/data =="
-          ls -la public/data || true
-
+      # ✅ GitHub Pages публикува preview/
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: preview
 
   deploy:
     needs: build
