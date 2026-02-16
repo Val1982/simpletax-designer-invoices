@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SimpleTax – Архив фактури</title>
+  <style>
+    :root{ --bg:#0b1220; --card:#111a2b; --text:#e7eefc; --muted:#9bb0d1; --line:#22314f; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1100px; margin:0 auto; padding:20px; }
+    h1{ margin:0 0 14px; font-size:22px; }
+    .bar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    input{
+      flex:1;
+      min-width:260px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:var(--card);
+      color:var(--text);
+      outline:none;
+    }
+    table{ width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    th,td{ padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; }
+    th{ text-align:left; color:var(--muted); font-weight:700; }
+    tr:hover td{ background:#0f1a2f; }
+    a{ color:#9ee6ff; text-decoration:none; font-weight:700; }
+    .muted{ color:var(--muted); font-size:13px; margin-top:10px; }
+    .btn{
+      padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+      background:var(--card); color:var(--text); cursor:pointer; font-weight:700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Архив фактури</h1>
+
+    <div class="bar">
+      <input id="q" placeholder="Търси: номер, клиент, дата..." />
+      <button class="btn" id="reload">Обнови</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:140px;">Номер</th>
+          <th style="width:130px;">Дата</th>
+          <th>Клиент</th>
+          <th style="width:140px;">Сума</th>
+          <th style="width:120px;">Печат</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="5" class="muted">Зареждам...</td></tr>
+      </tbody>
+    </table>
+
+    <div class="muted" id="meta"></div>
+  </div>
+
+  <script>
+    const $q = document.getElementById('q');
+    const $rows = document.getElementById('rows');
+    const $meta = document.getElementById('meta');
+    const $reload = document.getElementById('reload');
+
+    async function load() {
+      $rows.innerHTML = '<tr><td colspan="5" class="muted">Зареждам...</td></tr>';
+      const res = await fetch('./invoices.index.json', { cache: 'no-store' });
+      const data = await res.json();
+
+      window.__all = data.items || [];
+      render();
+      $meta.textContent = `Общо: ${window.__all.length} фактури • Последно обновяване: ${data.generatedAt || ''}`;
+    }
+
+    function norm(s){ return (s||'').toString().toLowerCase(); }
+    function render() {
+      const q = norm($q.value);
+      const items = (window.__all||[]).filter(it => {
+        if (!q) return true;
+        return norm(it.number).includes(q) || norm(it.date).includes(q) || norm(it.buyer).includes(q) || norm(it.total).includes(q);
+      });
+
+      if (!items.length) {
+        $rows.innerHTML = '<tr><td colspan="5" class="muted">Няма резултати.</td></tr>';
+        return;
+      }
+
+      $rows.innerHTML = items.map(it => `
+        <tr>
+          <td><a href="./view.html?id=${encodeURIComponent(it.id)}">${it.number || it.id}</a></td>
+          <td>${it.date || ''}</td>
+          <td>${it.buyer || ''}</td>
+          <td>${it.total || ''}</td>
+          <td><a href="./view.html?id=${encodeURIComponent(it.id)}&print=1">Print</a></td>
+        </tr>
+      `).join('');
+    }
+
+    $q.addEventListener('input', render);
+    $reload.addEventListener('click', load);
+
+    load();
+  </script>
+</body>
+</html>
