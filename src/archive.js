@@ -2,15 +2,6 @@ import fs from "fs";
 import path from "path";
 import { execFileSync } from "child_process";
 
-function escapeHtml(s = "") {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
@@ -45,8 +36,8 @@ function safeId(s) {
   return String(s).replace(/[^a-zA-Z0-9_\-:.]/g, "_");
 }
 
-// ✅ ТОВА Е ЕДИНСТВЕНИЯТ ИЗТОЧНИК НА ИСТИНА ЗА UI НА АРХИВА
-function archiveIndexHtmlTemplate() {
+// ✅ index.html = само HTML (без inline JS)
+function buildIndexHtml() {
   return `<!doctype html>
 <html lang="bg">
 <head>
@@ -109,6 +100,7 @@ function archiveIndexHtmlTemplate() {
     .count{ color:var(--mut); font-size:12px; }
     .leftgroup{ display:flex; gap:10px; align-items:center; }
   </style>
+  <script src="./app.js" defer></script>
 </head>
 <body>
   <div class="wrap">
@@ -149,8 +141,13 @@ function archiveIndexHtmlTemplate() {
 
     <div class="mut" id="foot"></div>
   </div>
+</body>
+</html>`;
+}
 
-<script>
+// ✅ app.js = целия JS (отделен файл, няма как да изтече като текст)
+function buildAppJs() {
+  return `(() => {
   const $ = (id) => document.getElementById(id);
   const norm = (s) => (s ?? "").toString().toLowerCase();
 
@@ -255,16 +252,13 @@ function archiveIndexHtmlTemplate() {
   $("printSelected").addEventListener("click", () => openBatchPrint(getSelectedIds()));
 
   render().catch(e => alert(e.message));
-</script>
-</body>
-</html>`;
+})();`;
 }
 
 function main() {
   const raw = readJson();
   const invoices = asArray(raw);
 
-  // ✅ Генерираме директно в preview/ (за GitHub Pages artifact path: preview)
   ensureDir("preview/archive");
   ensureDir("preview/archive/html");
   ensureDir("data/tmp");
@@ -290,13 +284,7 @@ function main() {
     const outHtml = path.join("preview/archive/html", `${id}.html`);
     execFileSync("node", ["src/render_one.js", "--in", tmpJson, "--out", outHtml], { stdio: "inherit" });
 
-    items.push({
-      id: escapeHtml(String(id)),
-      number: escapeHtml(String(number)),
-      date: escapeHtml(String(date)),
-      buyer: escapeHtml(String(buyer)),
-      total: escapeHtml(String(total)),
-    });
+    items.push({ id, number, date, buyer, total });
   });
 
   fs.writeFileSync(
@@ -305,8 +293,8 @@ function main() {
     "utf8"
   );
 
-  // ✅ Пишем правилния archive/index.html в preview/
-  fs.writeFileSync("preview/archive/index.html", archiveIndexHtmlTemplate(), "utf8");
+  fs.writeFileSync("preview/archive/index.html", buildIndexHtml(), "utf8");
+  fs.writeFileSync("preview/archive/app.js", buildAppJs(), "utf8");
 
   console.log(`Archive generated in preview/: ${items.length} invoices`);
 }
