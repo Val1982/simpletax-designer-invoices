@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { execFileSync } from "child_process";
 
 function escapeHtml(s = "") {
   return String(s)
@@ -35,55 +36,64 @@ function asArray(data) {
 function fmtMoney(amount, currency) {
   if (amount === null || amount === undefined || amount === "") return "";
   const n = Number(amount);
-  if (Number.isNaN(n)) return `${amount} ${currency || ""}`.trim();
-  // simple: 2 decimals only if needed
+  if (!Number.isFinite(n)) return `${amount} ${currency || ""}`.trim();
   const s = Number.isInteger(n) ? String(n) : n.toFixed(2);
   return `${s} ${currency || ""}`.trim();
+}
+
+function safeId(s) {
+  return String(s).replace(/[^a-zA-Z0-9_\-:.]/g, "_");
 }
 
 function main() {
   const raw = readJson();
   const invoices = asArray(raw);
 
+  ensureDir("archive");
   ensureDir("archive/html");
+  ensureDir("data/tmp");
 
-  const items = invoices.map((inv, idx) => {
-    const id = inv.documentID || inv.documentId || inv.id || inv.number || `inv_${idx + 1}`;
-    const number = inv.number || inv.DocumentNumber || inv.documentNumber || id;
-    const date = inv.date || inv.DocumentDate || inv.documentDate || "";
-    const buyer = inv.buyerName || inv.BuyerName || inv.customerName || "";
-    const currency = inv.documentCurrency || inv.DocumentCurrency || inv.currency || "";
+  const items = [];
+
+  invoices.forEach((inv, idx) => {
+    const idRaw = inv.documentID || inv.documentId || inv.id || inv.number || `inv_${idx + 1}`;
+    const id = safeId(idRaw);
+
+    const number = inv.number || idRaw;
+    const date = inv.date || "";
+    const buyer = inv.buyerName || "";
+    const currency = inv.documentCurrency || "BGN";
     const total = fmtMoney(
-      inv.documentAmount ?? inv.amountLeftToBePaid ?? inv.totalNetAmount ?? inv.totalAmountInVatReportingCurr ?? "",
+      inv.documentAmount ?? inv.amountLeftToBePaid ?? inv.totalNetAmount ?? "",
       currency
     );
 
-    // HTML за печат: засега ползваме последния export или preview
-    let html = "<html><body>Preview not found</body></html>";
-    if (fs.existsSync("export/eurofaktura-filled.html")) {
-      html = fs.readFileSync("export/eurofaktura-filled.html", "utf8");
-    } else if (fs.existsSync("preview/index.html")) {
-      html = fs.readFileSync("preview/index.html", "utf8");
-    }
-    fs.writeFileSync(path.join("archive/html", `${id}.html`), html, "utf8");
+    // 1) записваме временен JSON за тази фактура
+    const tmpJson = path.join("data/tmp", `${id}.json`);
+    fs.writeFileSync(tmpJson, JSON.stringify(inv, null, 2), "utf8");
 
-    return {
+    // 2) рендърваме отделен HTML за нея
+    const outHtml = path.join("archive/html", `${id}.html`);
+    execFileSync("node", ["src/render_one.js", "--in", tmpJson, "--out", outHtml], {
+      stdio: "inherit",
+    });
+
+    items.push({
       id: escapeHtml(String(id)),
       number: escapeHtml(String(number)),
       date: escapeHtml(String(date)),
       buyer: escapeHtml(String(buyer)),
-      total: escapeHtml(String(total))
-    };
+      total: escapeHtml(String(total)),
+    });
   });
 
-  ensureDir("archive");
   fs.writeFileSync(
     "archive/invoices.index.json",
     JSON.stringify({ generatedAt: new Date().toISOString(), items }, null, 2),
     "utf8"
   );
 
-  console.log(`Archive index generated: ${items.length} invoices`);
+  console.log(`Archive generated: ${items.length} invoices`);
 }
 
 main();
