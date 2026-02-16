@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Invoice 0000000112</title>
+<style>
+  :root{ --g:#2ecc71; --d:#1f2a33; --t:#0b1220; --mut:#667085; --line:#e6e8ec; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fff; color:var(--t); }
+  .page{ width:210mm; min-height:297mm; padding:14mm; }
+  .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .qr{ width:28mm; height:28mm; border:2px solid var(--g); border-radius:10px; padding:4px; }
+  .qr img{ width:100%; height:100%; }
+  .h1{ font-size:44px; letter-spacing:10px; color:#b9b9b9; font-weight:900; text-align:right; margin:0; }
+  .meta{ margin-top:6mm; width:100%; border-top:4px solid var(--g); padding-top:3mm; }
+  .meta table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .meta th{ text-align:left; color:var(--mut); padding:2px 0; font-weight:800; }
+  .meta td{ padding:2px 0; font-weight:800; }
+  .bill{ margin-top:8mm; }
+  .bill .label{ font-weight:900; font-size:12px; color:var(--mut); }
+  .bill .name{ font-weight:900; font-size:20px; margin-top:2mm; }
+  .bill .addr{ font-size:12px; color:var(--mut); margin-top:2mm; line-height:1.35; }
+  .table{ margin-top:10mm; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .thead{ background:linear-gradient(90deg,var(--g),var(--g)); color:#fff; font-weight:900; }
+  table.items{ width:100%; border-collapse:collapse; font-size:13px; }
+  .thead th{ padding:12px; text-align:left; }
+  .thead th.num{ text-align:right; }
+  .items td{ padding:12px; border-top:1px solid var(--line); vertical-align:top; }
+  .items td.num{ text-align:right; white-space:nowrap; }
+  .title{ font-weight:900; }
+  .b{ font-weight:900; }
+  .totals{ margin-top:10mm; display:flex; justify-content:flex-end; }
+  .box{ width:90mm; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+  .box .row{ display:flex; justify-content:space-between; padding:10px 12px; background:#f7f7f8; font-weight:800; }
+  .box .row.dark{ background:var(--d); color:#fff; }
+  .box .row.green{ background:var(--g); color:#fff; font-size:18px; font-weight:900; }
+  .footer{ margin-top:16mm; background:var(--g); color:#fff; font-weight:900; padding:14px; border-radius:14px; font-size:22px; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div>
+        <div class="bill">
+          <div class="label">INVOICE TO</div>
+          <div class="name">ДЕНТАЛЕН ЦЕНТЪР ДЕНТ-ШУМЕН ЕООД</div>
+          <div class="addr">
+            Пл. Възраждане 1<br/>
+            9700 град Шумен
+          </div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <p class="h1">INVOICE</p>
+        <div class="meta">
+          <table>
+            <tr>
+              <th>Invoice No</th><td>0000000112</td>
+              <th>Invoice Date</th><td>2025-12-30</td>
+              <th>Due Date</th><td>2026-01-06</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="qr">
+        <img alt="QR" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAAAAAklEQVR4AewaftIAAAVfSURBVO3BgY0bSRAEwawG/Xe5XhYMDxhtk7rPiPQPJK0YJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK158QNJ+O3acpKEG205ScJJW24l4aQtJ0k4actJEn67tpwMktYMktYMktYMktYMktYMktYMkta8+Ava8u2ScKMtJ0k4ScJJW06S8E5bntSWJ7Xl2yXhxiBpzSBpzSBpzSBpzSBpzSBpzSBpzYsFSXhSWz6tLSdJOEnCSVtuteUkCTfa8rQkPKktTxokrRkkrRkkrRkkrRkkrRkkrRkkrXmhH0nCjbbcSMI7bbnRFj1rkLRmkLRmkLRmkLRmkLRmkLRmkLTmhVYk4UZbbiXhRlt0Z5C0ZpC0ZpC0ZpC0ZpC0ZpC0ZpC05sWCtvx2bbmRhKe15V/Xln/ZIGnNIGnNIGnNIGnNIGnNIGnNIGnNIGnNi78gCTpLwklbTpLwTltOknDSlpMknLTlRhJ+u0HSmkHSmkHSmkHSmkHSmkHSmkHSmhc/0BZ9vySctOUkCU9qy//dIGnNIGnNIGnNIGnNIGnNIGnNIGnNix9IwklbnpSEk7a8k4QnJeFJbXknCZ+UhG/XlhtJOGnLySBpzSBpzSBpzSBpzSBpzSBpzSBpzYsfaMuNJJy05WltOUnCSVtOknDSlhtJuJWEk7acJOFJbXknCZ/UlhuDpDWDpDWDpDWDpDWDpDWDpDWDpDXpH7yRhE9qy0kSbrXlJAnfri03knDSlpMknLTlaUl4UltuDJLWDJLWDJLWDJLWDJLWDJLWDJLWpH/wRhJO2nKShJO2nCThpC3fLgknbTlJwjttOUnCk9pyIwnvtOVGEp7UlpNB0ppB0ppB0ppB0ppB0ppB0ppB0pr0D/4HknDSlpMknLTlJAknbbmVhBttOUnCSVtOkvC0tjwpCSdtORkkrRkkrRkkrRkkrRkkrRkkrRkkrRkkrXnxA0m40ZZPa8tJEk7acpKEk7bcSMI7bbmRhJO23GjLrSTcSMInDZLWDJLWDJLWDJLWDJLWDJLWDJLWvPiBtjwpCZ/WlpMkPCkJt5LwSUk4actJEt5py422fNIgac0gac0gac0gac0gac0gac0gac2LBUl4UltuJeGkLTeScKMt7yThpC03knDSlpMknLTlnSSctOUkCSdtedIgac0gac0gac0gac0gac0gac0gac2LH0jCjbZ8WhK+WVtOkvDtknAjCU9ry0kSbrTlZJC0ZpC0ZpC0ZpC0ZpC0ZpC0ZpC05sUPtOVf15YbSThpy5Pa8k4STpJw0pYbbXlaEm4k4aQtJ0m4MUhaM0haM0haM0haM0haM0haM0ha8+IHkvDbteVf15ZvloSTtjytLTfacmOQtGaQtGaQtGaQtGaQtGaQtGaQtObFX9CWb5eEG205ScJJW24k4Z22nCThk9rytCR8UltOBklrBklrBklrBklrBklrBklrBklrBklrXixIwpPa8rQknLTlJAk32vJOEm605SQJJ0n4tLacJOGkLSdJuDFIWjNIWjNIWjNIWjNIWjNIWjNIWvNCP9KWG225kYR32nIjCSdtuZGEk7Y8rS0nSXjSIGnNIGnNIGnNIGnNIGnNIGnNIGnNC61IwtOS8KQknLTlt2vLjUHSmkHSmkHSmkHSmkHSmkHSmkHSmhcL2vJ/15aTJJy05Z0knLTlRhJOknDSlpMkvNOWkyR8s0HSmkHSmkHSmkHSmkHSmkHSmkHSmhd/QRJ+uySctOUkCSdtOUnC05Jw0paTJJwk4VYSPikJJ205GSStGSStGSStGSStGSStGSStGSStSf9A0opB0ppB0ppB0ppB0ppB0ppB0ppB0pr/AAWAp9uOmzaXAAAAAElFTkSuQmCC" />
+      </div>
+    </div>
+
+    <div class="table">
+      <table class="items">
+        <thead class="thead">
+          <tr>
+            <th>Item Description</th>
+            <th class="num">Quantity</th>
+            <th class="num">Unit Price</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+              <tr>
+                <td class="desc">
+                  <div class="title">Административно обслужване</div>
+                </td>
+                <td class="num">1</td>
+                <td class="num">650 BGN</td>
+                <td class="num b">650 BGN</td>
+              </tr>
+            
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="box">
+        <div class="row dark"><span>Subtotal</span><span>650 BGN</span></div>
+        <div class="row green"><span>TOTAL</span><span>650 BGN</span></div>
+      </div>
+    </div>
+
+    <div class="footer">Thank you for your business!</div>
+  </div>
+</body>
+</html>

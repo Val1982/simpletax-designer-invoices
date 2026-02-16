@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Invoice 0000000107</title>
+<style>
+  :root{ --g:#2ecc71; --d:#1f2a33; --t:#0b1220; --mut:#667085; --line:#e6e8ec; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fff; color:var(--t); }
+  .page{ width:210mm; min-height:297mm; padding:14mm; }
+  .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .qr{ width:28mm; height:28mm; border:2px solid var(--g); border-radius:10px; padding:4px; }
+  .qr img{ width:100%; height:100%; }
+  .h1{ font-size:44px; letter-spacing:10px; color:#b9b9b9; font-weight:900; text-align:right; margin:0; }
+  .meta{ margin-top:6mm; width:100%; border-top:4px solid var(--g); padding-top:3mm; }
+  .meta table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .meta th{ text-align:left; color:var(--mut); padding:2px 0; font-weight:800; }
+  .meta td{ padding:2px 0; font-weight:800; }
+  .bill{ margin-top:8mm; }
+  .bill .label{ font-weight:900; font-size:12px; color:var(--mut); }
+  .bill .name{ font-weight:900; font-size:20px; margin-top:2mm; }
+  .bill .addr{ font-size:12px; color:var(--mut); margin-top:2mm; line-height:1.35; }
+  .table{ margin-top:10mm; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .thead{ background:linear-gradient(90deg,var(--g),var(--g)); color:#fff; font-weight:900; }
+  table.items{ width:100%; border-collapse:collapse; font-size:13px; }
+  .thead th{ padding:12px; text-align:left; }
+  .thead th.num{ text-align:right; }
+  .items td{ padding:12px; border-top:1px solid var(--line); vertical-align:top; }
+  .items td.num{ text-align:right; white-space:nowrap; }
+  .title{ font-weight:900; }
+  .b{ font-weight:900; }
+  .totals{ margin-top:10mm; display:flex; justify-content:flex-end; }
+  .box{ width:90mm; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+  .box .row{ display:flex; justify-content:space-between; padding:10px 12px; background:#f7f7f8; font-weight:800; }
+  .box .row.dark{ background:var(--d); color:#fff; }
+  .box .row.green{ background:var(--g); color:#fff; font-size:18px; font-weight:900; }
+  .footer{ margin-top:16mm; background:var(--g); color:#fff; font-weight:900; padding:14px; border-radius:14px; font-size:22px; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div>
+        <div class="bill">
+          <div class="label">INVOICE TO</div>
+          <div class="name">Коммерсиал Трейд БГ ЕООД</div>
+          <div class="addr">
+            Цар Иван Александъър 91<br/>
+            9700 град Шумен
+          </div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <p class="h1">INVOICE</p>
+        <div class="meta">
+          <table>
+            <tr>
+              <th>Invoice No</th><td>0000000107</td>
+              <th>Invoice Date</th><td>2025-12-01</td>
+              <th>Due Date</th><td>2025-12-08</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="qr">
+        <img alt="QR" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAAAAAklEQVR4AewaftIAAAUsSURBVO3BgY0cCQwDwaaw+afMdwS6B8ajtY2uSn9B0olB0plB0plB0plB0plB0plB0plB0plB0pkP/0MS/nVteVMSvq0tmyQ80ZZNEv51bdkMks4Mks4Mks4Mks4Mks4Mks4Mks58+A3a8qdLwpuS8ERbNkn4SVve1JY3teVPl4QnBklnBklnBklnBklnBklnBklnBklnPhxIwpva8rYkbNqyScImCfpZEt7UljcNks4Mks4Mks4Mks4Mks4Mks4Mks580Im2PJGEt7Vlk4RNW7QbJJ0ZJJ0ZJJ0ZJJ0ZJJ0ZJJ0ZJJ35oN8iCZu2PNGWnyRh05Yn2qJnBklnBklnBklnBklnBklnBklnBklnPhxoy7+uLZskbNrytiQ80ZZva8vfbJB0ZpB0ZpB0ZpB0ZpB0ZpB0ZpB0ZpB05sNvkAS9Kwk/acsmCZu2bJKwacsTSfjXDZLODJLODJLODJLODJLODJLODJLOpL+gHyXhb9eWTRI2bdEzg6Qzg6Qzg6Qzg6Qzg6Qzg6Qzg6QzH/6HJGzasknCn64tm7ZskvBtbdkkYdOWTRI2bdkk4U/XljcNks4Mks4Mks4Mks4Mks4Mks4Mks6kv/BlSXiiLU8l4U1t+dMl4U/Xlr/ZIOnMIOnMIOnMIOnMIOnMIOnMIOnMh/8hCW9qyyYJmyQ81ZY3JWHTlr9dWzZJ2LTlqSRs2vJEEjZt2QySzgySzgySzgySzgySzgySzgySzqS/8IMkvKktTyThJ215IgmbtmyS8ERbnkrCE23ZJOFtbfmbDZLODJLODJLODJLODJLODJLODJLOfPgN2vJEEjZteSoJb0rCpi2bJLytLZskbJKwacsmCZu2PJWETVueSMKmLZtB0plB0plB0plB0plB0plB0plB0plB0pkPB5LwRBI2bXkqCZu2PJGETVs2SXhbW97Ulk0SftKWJ5LwTYOkM4OkM4OkM4OkM4OkM4OkM4OkMx8OtGWThE1bnkrCE0n4prb8JAlPJOGJtmyS8La2bJLwTYOkM4OkM4OkM4OkM4OkM4OkM4OkMx8OJGHTlre1ZZOETVs2Sdi05YkkPNWWNyVh05ankrBpy6YtmyS8aZB0ZpB0ZpB0ZpB0ZpB0ZpB0ZpB05sOBtjyRhE1bfpKETVvelIRNW55qyyYJ35SEtyVh05ZvGiSdGSSdGSSdGSSdGSSdGSSdGSSdSX9BP0rCpi2bJGza8m1JeKItb0vCm9qyScKmLZtB0plB0plB0plB0plB0plB0plB0pkP/0MS/nVt2bTlTUl4qi1PtGWThCeSsGnLU23ZJGGThDcNks4Mks4Mks4Mks4Mks4Mks4Mks58+A3a8qdLwhNJeKItmyRs2vJUEr6pLW9LwqYt3zRIOjNIOjNIOjNIOjNIOjNIOjNIOjNIOvPhQBLe1JY/XRK+rS2bJDyRhD9dEjZt2SRh05bNIOnMIOnMIOnMIOnMIOnMIOnMIOnMB/0WbdkkYdOWTRLe1pY3JeHb2rJJwpsGSWcGSWcGSWcGSWcGSWcGSWcGSWc+6K/Qlp8k4YkkbNqyScKmLd+WhE1bNkl4YpB0ZpB0ZpB0ZpB0ZpB0ZpB0ZpB05sOBtvzt2rJJwpuS8FRb3tSWTRKeassmCZu2fNMg6cwg6cwg6cwg6cwg6cwg6cwg6cyH3yAJ/7okbNrybW3ZJGHTlieS8ERbnmrLJgnfNEg6M0g6M0g6M0g6M0g6M0g6M0g6k/6CpBODpDODpDODpDODpDODpDODpDODpDP/AZu4jdRvaN9UAAAAAElFTkSuQmCC" />
+      </div>
+    </div>
+
+    <div class="table">
+      <table class="items">
+        <thead class="thead">
+          <tr>
+            <th>Item Description</th>
+            <th class="num">Quantity</th>
+            <th class="num">Unit Price</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+              <tr>
+                <td class="desc">
+                  <div class="title">Административно обслужване</div>
+                </td>
+                <td class="num">1</td>
+                <td class="num">200 BGN</td>
+                <td class="num b">200 BGN</td>
+              </tr>
+            
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="box">
+        <div class="row dark"><span>Subtotal</span><span>200 BGN</span></div>
+        <div class="row green"><span>TOTAL</span><span>200 BGN</span></div>
+      </div>
+    </div>
+
+    <div class="footer">Thank you for your business!</div>
+  </div>
+</body>
+</html>
