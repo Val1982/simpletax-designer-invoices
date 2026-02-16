@@ -52,7 +52,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # вземи remote промени, ако има
           git pull --rebase origin main || true
 
           git add -A
@@ -63,13 +62,14 @@ jobs:
             git push origin HEAD:main
           fi
 
+      # ✅ Пакет за Pages: preview (root) + archive (/archive) + data (/data)
       - name: Build Pages bundle (public/)
         run: |
           set -e
           rm -rf public
-          mkdir -p public/archive
+          mkdir -p public/archive public/data
 
-          # preview -> root на сайта
+          # preview -> root
           if [ -d "preview" ]; then
             cp -R preview/. public/
           fi
@@ -79,10 +79,17 @@ jobs:
             cp -R archive/. public/archive/
           fi
 
+          # ✅ data -> /data (за да можем да виждаме invoices.json)
+          if [ -d "data" ]; then
+            cp -R data/. public/data/
+          fi
+
           echo "== public root =="
           ls -la public || true
           echo "== public/archive =="
           ls -la public/archive || true
+          echo "== public/data =="
+          ls -la public/data || true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
