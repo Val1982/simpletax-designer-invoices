@@ -1,206 +1,106 @@
 <!doctype html>
 <html lang="bg">
 <head>
-  <meta charset="utf-8" />
-  <style>
-    :root{
-      --green:#27AE60;
-      --green2:#2ECC71;
-      --dark:#1F2A33;
-      --green:#27AE60;
-      --green2:#2ECC71;
-      --dark:#1F2A33;
-      --text:#0B1220;
-      --muted:#667085;
-      --border:#E6E8EC;
-      --font: Inter, Arial, sans-serif;
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family:var(--font); color:var(--text); background:#fff; }
-
-    .page{
-      width:210mm;
-      min-height:297mm;
-      position:relative;
-      overflow:hidden;
-    }
-
-    .shape-dark{
-      position:absolute; top:-40mm; left:-45mm; width:120mm; height:95mm;
-      background:var(--dark); border-radius:60mm; transform:rotate(-12deg);
-      opacity:.98; z-index:0;
-    }
-    .shape-green{
-      position:absolute; top:-55mm; right:-55mm; width:145mm; height:110mm;
-      background:linear-gradient(135deg,var(--green),var(--green2));
-      border-radius:80mm; transform:rotate(14deg);
-      opacity:.98; z-index:0;
-    }
-    .watermark{
-      position:absolute; inset:-12mm; pointer-events:none; opacity:.07;
-      background-repeat:no-repeat; background-position:center; background-size:72%;
-      transform:rotate(-10deg); z-index:0;
-    }
-
-    .content{ padding:14mm; position:relative; z-index:1; }
-
-    .top{ display:grid; grid-template-columns: 1fr 90mm; gap:10mm; align-items:start; }
-
-    .logo{ width:54mm; height:18mm; object-fit:contain; display:block; }
-
-    .to-block{ margin-top:9mm; font-size:12px; color:var(--muted); line-height:1.35; }
-    .to-label{ font-weight:900; letter-spacing:.9px; margin-bottom:3mm; color:#1c2630; }
-    .to-name{ color:var(--text); font-weight:900; font-size:20px; margin-bottom:1mm; }
-    .to-company{ color:var(--text); font-weight:700; font-size:12.5px; margin-bottom:3mm; }
-    .to-line{ margin-top:6px; color:#1c2630; font-size:11.5px; font-weight:700; }
-
-    .contact-bar{
-      position:relative; height:20mm; border-radius:22px; overflow:hidden;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:0 8mm 0 7mm; color:#fff;
-      background:linear-gradient(90deg, var(--dark) 0%, var(--dark) 60%, var(--green) 60%, var(--green2) 100%);
-    }
-    .contact-left{ font-size:10.5px; opacity:.95; line-height:1.25; font-weight:600; }
-    .qr{ width:18mm; height:18mm; background:#fff; border-radius:7px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    .qr svg{ width:100%; height:100%; }
-
-    .invoice-word{ margin-top:10mm; text-align:right; font-weight:900; letter-spacing:7px; font-size:46px; color:#B9B9B9; }
-
-    .date-strip{
-      margin-top:6mm; border-top:6px solid var(--green); padding-top:4mm;
-      display:grid; grid-template-columns: 1fr 1fr 1fr;
-      border-bottom:1px solid var(--border); padding-bottom:4mm; font-size:11.5px;
-    }
-    .date-cell{ border-right:1px solid var(--border); padding:0 6mm; }
-    .date-cell:last-child{ border-right:none; }
-    .date-label{ font-size:10.5px; color:var(--muted); font-weight:800; }
-    .date-value{ margin-top:3px; font-weight:900; color:var(--text); }
-
-    .items-head{ margin-top:12mm; display:grid; grid-template-columns: 1fr 90mm; overflow:hidden; }
-    .items-head .left{ background:linear-gradient(90deg,var(--green),var(--green2)); color:#fff; padding:12px 16px; font-weight:900; font-size:18px; border-top-left-radius:12px; }
-    .items-head .right{ background:var(--dark); color:#fff; padding:12px 16px; display:grid; grid-template-columns: 1fr 1fr 1fr; font-weight:900; font-size:12.5px; text-align:center; border-top-right-radius:12px; }
-
-    .items{ border-left:1px solid var(--border); border-right:1px solid var(--border); border-bottom:1px solid var(--border); border-bottom-left-radius:12px; border-bottom-right-radius:12px; overflow:hidden; }
-    .row{ display:grid; grid-template-columns: 1fr 90mm; border-bottom:2.5px solid var(--green); min-height:18mm; }
-    .row:last-child{ border-bottom:none; }
-    .desc{ padding:13px 16px; }
-    .desc .title{ font-weight:900; font-size:15px; margin-bottom:6px; letter-spacing:.2px; }
-    .desc .sub{ color:var(--muted); font-size:11.5px; line-height:1.35; font-weight:600; }
-    .nums{ padding:13px 16px; display:grid; grid-template-columns: 1fr 1fr 1fr; text-align:center; align-items:center; font-weight:900; font-size:13px; color:#1c2630; }
-
-    .bottom{ margin-top:10mm; display:grid; grid-template-columns: 1fr 90mm; gap:10mm; align-items:start; }
-    .payment-card{ background:#F3F4F6; border-radius:12px; padding:14px 16px; border:1px solid var(--border); }
-    .payment-card h3{ margin:0 0 12px 0; color:var(--green); font-size:12px; letter-spacing:.8px; text-transform:uppercase; font-weight:900; }
-    .payment-grid{ display:grid; grid-template-columns: 22mm 1fr; gap:7px 10px; font-size:12px; }
-    .payment-grid .k{ color:var(--muted); font-weight:800; }
-    .payment-grid .v{ color:var(--text); font-weight:900; }
-
-    .totals-dark{ background:var(--dark); color:#fff; border-radius:12px; padding:14px 16px; }
-    .totals-dark .line{ display:flex; justify-content:space-between; align-items:center; font-size:12px; margin:8px 0; opacity:.98; }
-    .totals-dark .line strong{ font-weight:900; }
-
-    .total-green{ margin-top:10px; background:linear-gradient(90deg,var(--green),var(--green2)); border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; color:#fff; font-weight:900; font-size:18px; }
-
-    .thanks{ margin-top:14mm; background:linear-gradient(90deg,var(--green),var(--green2)); color:#fff; border-radius:20px 0 0 0; padding:18px 20px; font-size:22px; font-weight:900; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Invoice 0000000114</title>
+<style>
+  :root{ --g:#2ecc71; --d:#1f2a33; --t:#0b1220; --mut:#667085; --line:#e6e8ec; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fff; color:var(--t); }
+  .page{ width:210mm; min-height:297mm; padding:14mm; }
+  .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+  .qr{ width:28mm; height:28mm; border:2px solid var(--g); border-radius:10px; padding:4px; }
+  .qr img{ width:100%; height:100%; }
+  .h1{ font-size:44px; letter-spacing:10px; color:#b9b9b9; font-weight:900; text-align:right; margin:0; }
+  .meta{ margin-top:6mm; width:100%; border-top:4px solid var(--g); padding-top:3mm; }
+  .meta table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .meta th{ text-align:left; color:var(--mut); padding:2px 0; font-weight:800; }
+  .meta td{ padding:2px 0; font-weight:800; }
+  .bill{ margin-top:8mm; }
+  .bill .label{ font-weight:900; font-size:12px; color:var(--mut); }
+  .bill .name{ font-weight:900; font-size:20px; margin-top:2mm; }
+  .bill .addr{ font-size:12px; color:var(--mut); margin-top:2mm; line-height:1.35; }
+  .table{ margin-top:10mm; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .thead{ background:linear-gradient(90deg,var(--g),var(--g)); color:#fff; font-weight:900; }
+  table.items{ width:100%; border-collapse:collapse; font-size:13px; }
+  .thead th{ padding:12px; text-align:left; }
+  .thead th.num{ text-align:right; }
+  .items td{ padding:12px; border-top:1px solid var(--line); vertical-align:top; }
+  .items td.num{ text-align:right; white-space:nowrap; }
+  .title{ font-weight:900; }
+  .b{ font-weight:900; }
+  .totals{ margin-top:10mm; display:flex; justify-content:flex-end; }
+  .box{ width:90mm; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
+  .box .row{ display:flex; justify-content:space-between; padding:10px 12px; background:#f7f7f8; font-weight:800; }
+  .box .row.dark{ background:var(--d); color:#fff; }
+  .box .row.green{ background:var(--g); color:#fff; font-size:18px; font-weight:900; }
+  .footer{ margin-top:16mm; background:var(--g); color:#fff; font-weight:900; padding:14px; border-radius:14px; font-size:22px; }
+</style>
 </head>
-
 <body>
   <div class="page">
-    <div class="shape-dark"></div>
-    <div class="shape-green"></div>
-    
+    <div class="top">
+      <div>
+        <div class="bill">
+          <div class="label">INVOICE TO</div>
+          <div class="name">Коммерсиал Трейд БГ ЕООД</div>
+          <div class="addr">
+            Цар Иван Александъър 91<br/>
+            9700 град Шумен
+          </div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <p class="h1">INVOICE</p>
+        <div class="meta">
+          <table>
+            <tr>
+              <th>Invoice No</th><td>0000000114</td>
+              <th>Invoice Date</th><td>2026-01-05</td>
+              <th>Due Date</th><td>2026-01-12</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="qr">
+        <img alt="QR" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAAAAAklEQVR4AewaftIAAAUjSURBVO3BgW0jQRADweZA+afMdwSrB9Y3so2uSr8gacUgac0gac0gac0gac0gac0gac0gac0gac2L/5CEv64tN5Jw0panJeGkLSdJuNGWkyT8dW05GSStGSStGSStGSStGSStGSStGSStefEN2vLTJeGTkvC0tvxmbfnpknBjkLRmkLRmkLRmkLRmkLRmkLRmkLTmxYIkPKktT0vCSVtuJOGkLU9ry0kSPi0JT2rLkwZJawZJawZJawZJawZJawZJawZJa17oWyThRltOkvBOW24k4aQtujNIWjNIWjNIWjNIWjNIWjNIWjNIWvNC36ItJ0l4WhJO2nIjCSdt0dkgac0gac0gac0gac0gac0gac0gac2LBW3RWRJO2vJOEk6ScKMtn9aW32yQtGaQtGaQtGaQtGaQtGaQtGaQtGaQtObFN0iC7rTlJAnvtOUkCSdtOUnCSVtuJOGvGyStGSStGSStGSStGSStGSStGSStSb+gt5LwpLbcSsJJW06ScNIW3RkkrRkkrRkkrRkkrRkkrRkkrRkkrXnxH5Jw0paTJPx0bTlpy40k3EjCO205ScJJW06ScNKWkyT8dG150iBpzSBpzSBpzSBpzSBpzSBpzSBpzYsFbbmRhJO2PC0JJ2356dpykoQbSXhaW36zQdKaQdKaQdKaQdKaQdKaQdKaQdKa9AsfloS/ri0nSThpy9OScKMtJ0k4acutJJy05UYSTtpyMkhaM0haM0haM0haM0haM0haM0hak37hw5Jw0paTJLzTlk9KwklbTpLwTltOknCjLSdJeFpbfrNB0ppB0ppB0ppB0ppB0ppB0ppB0pr0C28k4SdryztJOGnLSRJO2nKShJO2fFoSbrTlJAknbbmVhJO23EjCSVtOBklrBklrBklrBklrBklrBklrBklrBklrXixoy5OS8E5bTpJw0pZPSsLT2vKktpwk4Z223EjCJw2S1gyS1gyS1gyS1gyS1gyS1gyS1qRfeCMJJ205ScJJW56WhJO2/HZJ+KS2nCThVltuJOFJbTkZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK158Qsk4VZbnpSEG205ScKttjwpCSdtuZWEk7actOUkCU8aJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK15saAtT2rLO0n4pLY8rS0nSfikJDwtCSdt+aRB0ppB0ppB0ppB0ppB0ppB0ppB0pr0C3orCU9qy6cl4UZbnpaEJ7XlJAknbTkZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK158R+S8Ne15aQtT0rCrbbcaMtJEm4k4aQtt9pykoSTJDxpkLRmkLRmkLRmkLRmkLRmkLRmkLTmxTdoy0+XhBtJuNGWG225lYRPasvTknDSlk8aJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK15sSAJT2rLp7Xlp2vLSRJuJOGnS8JJW06ScNKWk0HSmkHSmkHSmkHSmkHSmkHSmkHSmhf6EdpykoSnteVJSfi0tpwk4UmDpDWDpDWDpDWDpDWDpDWDpDWDpDUvtCIJJ205acs7SbiRhJO2nCThpC2floSTtpwk4cYgac0gac0gac0gac0gac0gac0gac2LBW357dpyoy03knCrLU9qy0kSbrXlJAknbfmkQdKaQdKaQdKaQdKaQdKaQdKaQdKaF98gCX9dEm605WltOUnCSVtuJOFGW2615SQJnzRIWjNIWjNIWjNIWjNIWjNIWjNIWpN+QdKKQdKaQdKaQdKaQdKaQdKaQdKaQdKaf7ePmLEH8MxlAAAAAElFTkSuQmCC" />
+      </div>
+    </div>
 
-    <div class="content">
-      <div class="top">
-        <div>
+    <div class="table">
+      <table class="items">
+        <thead class="thead">
+          <tr>
+            <th>Item Description</th>
+            <th class="num">Quantity</th>
+            <th class="num">Unit Price</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
           
-          <div class="to-block">
-            <div class="to-label">INVOICE TO</div>
-            <div class="to-name">Client Name</div>
-            <div class="to-company">Company</div>
-            <div class="to-line">PHONE: </div>
-            <div class="to-line">EMAIL: </div>
-            <div class="to-line">ADDRESS: </div>
-          </div>
-        </div>
+              <tr>
+                <td class="desc">
+                  <div class="title">Административно обслужване</div>
+                </td>
+                <td class="num">1</td>
+                <td class="num">103 EUR</td>
+                <td class="num b">103 EUR</td>
+              </tr>
+            
+        </tbody>
+      </table>
+    </div>
 
-        <div>
-          <div class="contact-bar">
-            <div class="contact-left">
-              <div></div>
-              <div></div>
-            </div>
-            <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 25 25" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h25v25H0z"/><path stroke="#000000" d="M0 0.5h7m1 0h2m4 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m1 0h1m1 0h2m6 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m2 0h2m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m4 0h1m1 0h1m4 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M10 7.5h2m1 0h2M0 8.5h1m2 0h7m4 0h4m2 0h1m1 0h3M0 9.5h4m4 0h2m1 0h2m1 0h2m3 0h5M1 10.5h2m2 0h2m1 0h1m2 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1M0 11.5h5m4 0h1m2 0h1m1 0h1m3 0h1m2 0h4M0 12.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h3m2 0h1m5 0h1M0 13.5h1m2 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m3 0h1m2 0h1M0 14.5h4m2 0h1m2 0h2m3 0h2m1 0h1m2 0h5M0 15.5h1m1 0h1m2 0h1m2 0h3m1 0h3m2 0h3m1 0h2m1 0h1M0 16.5h1m1 0h2m1 0h3m1 0h4m2 0h6m1 0h2M8 17.5h2m1 0h1m4 0h1m3 0h1m1 0h2M0 18.5h7m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1M0 19.5h1m5 0h1m1 0h4m1 0h1m1 0h2m3 0h1m3 0h1M0 20.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h6m2 0h2M0 21.5h1m1 0h3m1 0h1m1 0h2m2 0h2m2 0h3m4 0h2M0 22.5h1m1 0h3m1 0h1m2 0h3m1 0h1m2 0h1m3 0h5M0 23.5h1m5 0h1m2 0h1m1 0h3m3 0h4m1 0h3M0 24.5h7m1 0h2m1 0h3m2 0h3m2 0h1m2 0h1"/></svg>
-</div>
-          </div>
-
-          <div class="invoice-word">INVOICE</div>
-
-          <div class="date-strip">
-            <div class="date-cell">
-              <div class="date-label">Invoice No</div>
-              <div class="date-value">0000000106</div>
-            </div>
-            <div class="date-cell">
-              <div class="date-label">Invoice Date</div>
-              <div class="date-value">2025-12-01</div>
-            </div>
-            <div class="date-cell">
-              <div class="date-label">Due Date</div>
-              <div class="date-value"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="items-head">
-        <div class="left">Item Description</div>
-        <div class="right">
-          <div>Quantity</div>
-          <div>Unit Price</div>
-          <div>Total</div>
-        </div>
-      </div>
-
-      <div class="items">
-      <div class="row">
-        <div class="desc">
-          <div class="title">No items</div>
-          <div class="sub">—</div>
-        </div>
-        <div class="nums">
-          <div>—</div>
-          <div>—</div>
-          <div class="price">—</div>
-        </div>
+    <div class="totals">
+      <div class="box">
+        <div class="row dark"><span>Subtotal</span><span>103 EUR</span></div>
+        <div class="row green"><span>TOTAL</span><span>103 EUR</span></div>
       </div>
     </div>
 
-      <div class="bottom">
-        <div class="payment-card">
-          <h3>PAYMENT METHOD</h3>
-          <div class="payment-grid">
-            <div class="k">Bank</div><div class="v"></div>
-            <div class="k">IBAN</div><div class="v"></div>
-            <div class="k">BIC</div><div class="v"></div>
-            <div class="k">Holder</div><div class="v"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="totals-dark">
-            <div class="line"><span>Subtotal</span><strong></strong></div>
-            <div class="line"><span>VAT</span><strong></strong></div>
-          </div>
-          <div class="total-green">
-            <span>TOTAL</span><span></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="thanks">Thank you for your business!</div>
-    </div>
+    <div class="footer">Thank you for your business!</div>
   </div>
 </body>
 </html>
