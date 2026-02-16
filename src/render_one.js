@@ -5,10 +5,7 @@ import QRCode from "qrcode";
 /**
  * render_one.js
  * Usage:
- *   node src/render_one.js --in data/tmp_invoice.json --out archive/html/60_77740.html
- *
- * Очаква JSON обект на една фактура със полета като:
- * number, date, paymentDueDate, buyerName, Items[], documentAmount, documentCurrency ...
+ *   node src/render_one.js --in data/tmp_invoice.json --out archive/html/<id>.html
  */
 
 function escapeHtml(s = "") {
@@ -18,6 +15,30 @@ function escapeHtml(s = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function pick(obj, keys, fallback = "") {
+  for (const k of keys) {
+    if (!k) continue;
+    const parts = k.split(".");
+    let cur = obj;
+    let ok = true;
+    for (const p of parts) {
+      if (cur && Object.prototype.hasOwnProperty.call(cur, p)) cur = cur[p];
+      else {
+        ok = false;
+        break;
+      }
+    }
+    if (ok && cur !== null && cur !== undefined && String(cur).trim() !== "") return cur;
+  }
+  return fallback;
+}
+
+function asArray(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  return [v];
 }
 
 function money(v, cur) {
@@ -42,43 +63,77 @@ function parseArgs() {
   return out;
 }
 
-function buildInvoiceHtml(inv, qrDataUrl) {
-  const number = escapeHtml(inv.number || "");
-  const date = escapeHtml(inv.date || "");
-  const due = escapeHtml(inv.paymentDueDate || "");
-  const buyer = escapeHtml(inv.buyerName || "");
-  const buyerStreet = escapeHtml(inv.buyerStreet || "");
-  const buyerCity = escapeHtml(inv.buyerCity || "");
-  const buyerPostal = escapeHtml(inv.buyerPostalCode || "");
-  const cur = inv.documentCurrency || "BGN";
+function extractItems(inv) {
+  // Еврофактура може да върне Items или items, а понякога и Document.Items
+  const a =
+    pick(inv, ["Items"]) ||
+    pick(inv, ["items"]) ||
+    pick(inv, ["Document.Items"]) ||
+    pick(inv, ["document.Items"]) ||
+    pick(inv, ["lines"]) ||
+    pick(inv, ["Lines"]);
+  return Array.isArray(a) ? a : [];
+}
 
-  const items = Array.isArray(inv.Items) ? inv.Items : [];
+function buildInvoiceHtml(inv, qrDataUrl) {
+  const number = escapeHtml(pick(inv, ["number", "DocumentNumber", "documentNumber"], ""));
+  const date = escapeHtml(pick(inv, ["date", "DocumentDate", "documentDate"], ""));
+  const due = escapeHtml(pick(inv, ["paymentDueDate", "PaymentDueDate"], ""));
+
+  const buyer = escapeHtml(
+    pick(inv, ["buyerName", "BuyerName", "customerName", "CustomerName", "PartnerName"], "Client Name")
+  );
+
+  const buyerStreet = escapeHtml(pick(inv, ["buyerStreet", "BuyerStreet"], ""));
+  const buyerCity = escapeHtml(pick(inv, ["buyerCity", "BuyerCity"], ""));
+  const buyerPostal = escapeHtml(pick(inv, ["buyerPostalCode", "BuyerPostalCode"], ""));
+
+  const cur = pick(inv, ["documentCurrency", "DocumentCurrency", "currency", "Currency"], "BGN");
+
+  const items = extractItems(inv);
+
   const rows =
     items.length
       ? items
           .map((it) => {
-            const name = escapeHtml(it.productName || it.description || "");
-            const qty = escapeHtml(it.quantity ?? "");
-            const unitPrice = escapeHtml(money(it.priceInDocumentCurrency ?? it.price ?? "", cur));
-            const total = escapeHtml(money(it.amount ?? it.netPriceInDocumentCurrency ?? "", cur));
+            const name = escapeHtml(
+              pick(it, ["productName", "ProductName", "name", "Name", "description", "Description"], "-")
+            );
+            const qty = escapeHtml(String(pick(it, ["quantity", "Quantity", "qty", "Qty"], "—")));
+            const unitPrice = escapeHtml(
+              money(
+                pick(it, ["priceInDocumentCurrency", "PriceInDocumentCurrency", "price", "Price", "unitPrice", "UnitPrice"], ""),
+                cur
+              )
+            );
+            const total = escapeHtml(
+              money(pick(it, ["amount", "Amount", "netPriceInDocumentCurrency", "NetPriceInDocumentCurrency", "total", "Total"], ""), cur)
+            );
+
             return `
               <tr>
                 <td class="desc">
-                  <div class="title">${name || "-"}</div>
+                  <div class="title">${name}</div>
                 </td>
                 <td class="num">${qty}</td>
-                <td class="num">${unitPrice}</td>
-                <td class="num b">${total}</td>
+                <td class="num">${unitPrice || "—"}</td>
+                <td class="num b">${total || "—"}</td>
               </tr>
             `;
           })
           .join("")
       : `<tr><td class="desc"><div class="title">No items</div></td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>`;
 
-  const subtotal = money(inv.totalNetAmount ?? inv.documentAmount ?? "", cur);
-  const total = money(inv.documentAmount ?? inv.amountLeftToBePaid ?? "", cur);
+  const subtotal = money(
+    pick(inv, ["totalNetAmount", "TotalNetAmount", "documentAmount", "DocumentAmount", "totalAmountInVatReportingCurr"], ""),
+    cur
+  );
 
-  // Минимален HTML (стабилен за браузър). По-късно ще го направим 1:1 с PSD.
+  const total = money(
+    pick(inv, ["documentAmount", "DocumentAmount", "amountLeftToBePaid", "AmountLeftToBePaid", "totalAmountInVatReportingCurr"], ""),
+    cur
+  );
+
   return `<!doctype html>
 <html lang="bg">
 <head>
@@ -125,7 +180,7 @@ function buildInvoiceHtml(inv, qrDataUrl) {
       <div>
         <div class="bill">
           <div class="label">INVOICE TO</div>
-          <div class="name">${buyer || "Client Name"}</div>
+          <div class="name">${buyer}</div>
           <div class="addr">
             ${buyerStreet ? buyerStreet + "<br/>" : ""}
             ${buyerPostal || buyerCity ? `${buyerPostal} ${buyerCity}` : ""}
@@ -167,8 +222,8 @@ function buildInvoiceHtml(inv, qrDataUrl) {
 
     <div class="totals">
       <div class="box">
-        <div class="row dark"><span>Subtotal</span><span>${escapeHtml(subtotal)}</span></div>
-        <div class="row green"><span>TOTAL</span><span>${escapeHtml(total)}</span></div>
+        <div class="row dark"><span>Subtotal</span><span>${escapeHtml(subtotal || "")}</span></div>
+        <div class="row green"><span>TOTAL</span><span>${escapeHtml(total || "")}</span></div>
       </div>
     </div>
 
@@ -182,15 +237,11 @@ async function main() {
   const { in: inFile, out: outFile } = parseArgs();
   const inv = JSON.parse(fs.readFileSync(inFile, "utf8"));
 
-  // QR съдържание: най-сигурно е да сложим баркода/референцията/ID
-  const qrText =
-    inv.documentIdBarCode ||
-    inv.reference ||
-    inv.documentID ||
-    inv.number ||
-    "SIMPLETAX";
+  const qrText = String(
+    pick(inv, ["documentIdBarCode", "documentID", "reference", "number"], "SIMPLETAX")
+  );
 
-  const qrDataUrl = await QRCode.toDataURL(String(qrText), { margin: 1, width: 220 });
+  const qrDataUrl = await QRCode.toDataURL(qrText, { margin: 1, width: 220 });
 
   const html = buildInvoiceHtml(inv, qrDataUrl);
 
