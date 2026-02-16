@@ -73,8 +73,12 @@ async function main() {
 
   // Динамично лого/воден знак (ако ги имаш в JSON)
   // Може после да ги подаваме от ЕвроФактура настройки или от твоя бекенд.
-  const logoUrl = pick(inv, ["logoUrl", "LogoUrl", "organizationLogoUrl", "OrganizationLogoUrl"], "");
-  const watermarkUrl = pick(inv, ["watermarkUrl", "WatermarkUrl"], "");
+  const logoUrl =
+  pick(inv, ["logoUrl", "LogoUrl", "organizationLogoUrl", "OrganizationLogoUrl"], "") ||
+  "https://www.simpletax.bg/web/image/website/1/logo";
+  const watermarkUrl =
+  pick(inv, ["watermarkUrl", "WatermarkUrl"], "") ||
+  "https://www.simpletax.bg/web/image/website/1/logo";
 
   const items = Array.isArray(inv.Items) ? inv.Items : (Array.isArray(inv.items) ? inv.items : []);
   const total = pick(inv, ["documentAmount", "totalNetAmount", "TotalForPayment", "amountLeftToBePaid"], 0);
