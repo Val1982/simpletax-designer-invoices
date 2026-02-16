@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice</title>
+  <style>
+    body{ margin:0; background:#0b1220; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      display:flex; gap:10px; align-items:center;
+      padding:10px 12px; background:#101a2b; border-bottom:1px solid #22314f;
+    }
+    a,button{
+      color:#e7eefc; text-decoration:none; font-weight:800;
+      background:#111a2b; border:1px solid #22314f; border-radius:10px;
+      padding:8px 12px; cursor:pointer;
+    }
+    .frame{
+      width:100%;
+      min-height:calc(100vh - 54px);
+      border:0;
+      background:#fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="./index.html">← Архив</a>
+    <button id="print">Print</button>
+    <span id="lbl" style="color:#9bb0d1;font-weight:700;"></span>
+  </div>
+
+  <iframe id="f" class="frame"></iframe>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    const autoPrint = params.get('print') === '1';
+
+    document.getElementById('lbl').textContent = id ? `ID: ${id}` : '';
+
+    // HTML файловете се генерират в archive/html/<id>.html
+    const url = id ? `./html/${encodeURIComponent(id)}.html` : '../preview/index.html';
+    document.getElementById('f').src = url;
+
+    document.getElementById('print').onclick = () => {
+      const w = document.getElementById('f').contentWindow;
+      w.focus();
+      w.print();
+    };
+
+    if (autoPrint) {
+      setTimeout(() => document.getElementById('print').click(), 800);
+    }
+  </script>
+</body>
+</html>
