@@ -5,9 +5,7 @@
   "private": true,
   "scripts": {
     "poll": "node src/poll.js",
-    "render": "node src/render.js"
-  },
-  "dependencies": {
-    "qrcode": "^1.5.4"
+    "render": "node src/render.js",
+    "archive": "node src/archive.js"
   }
 }
