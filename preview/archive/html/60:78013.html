@@ -1,106 +1,309 @@
 <!doctype html>
 <html lang="bg">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Invoice 0000000114</title>
-<style>
-  :root{ --g:#2ecc71; --d:#1f2a33; --t:#0b1220; --mut:#667085; --line:#e6e8ec; }
-  *{ box-sizing:border-box; }
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#fff; color:var(--t); }
-  .page{ width:210mm; min-height:297mm; padding:14mm; }
-  .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
-  .qr{ width:28mm; height:28mm; border:2px solid var(--g); border-radius:10px; padding:4px; }
-  .qr img{ width:100%; height:100%; }
-  .h1{ font-size:44px; letter-spacing:10px; color:#b9b9b9; font-weight:900; text-align:right; margin:0; }
-  .meta{ margin-top:6mm; width:100%; border-top:4px solid var(--g); padding-top:3mm; }
-  .meta table{ width:100%; border-collapse:collapse; font-size:12px; }
-  .meta th{ text-align:left; color:var(--mut); padding:2px 0; font-weight:800; }
-  .meta td{ padding:2px 0; font-weight:800; }
-  .bill{ margin-top:8mm; }
-  .bill .label{ font-weight:900; font-size:12px; color:var(--mut); }
-  .bill .name{ font-weight:900; font-size:20px; margin-top:2mm; }
-  .bill .addr{ font-size:12px; color:var(--mut); margin-top:2mm; line-height:1.35; }
-  .table{ margin-top:10mm; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-  .thead{ background:linear-gradient(90deg,var(--g),var(--g)); color:#fff; font-weight:900; }
-  table.items{ width:100%; border-collapse:collapse; font-size:13px; }
-  .thead th{ padding:12px; text-align:left; }
-  .thead th.num{ text-align:right; }
-  .items td{ padding:12px; border-top:1px solid var(--line); vertical-align:top; }
-  .items td.num{ text-align:right; white-space:nowrap; }
-  .title{ font-weight:900; }
-  .b{ font-weight:900; }
-  .totals{ margin-top:10mm; display:flex; justify-content:flex-end; }
-  .box{ width:90mm; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
-  .box .row{ display:flex; justify-content:space-between; padding:10px 12px; background:#f7f7f8; font-weight:800; }
-  .box .row.dark{ background:var(--d); color:#fff; }
-  .box .row.green{ background:var(--g); color:#fff; font-size:18px; font-weight:900; }
-  .footer{ margin-top:16mm; background:var(--g); color:#fff; font-weight:900; padding:14px; border-radius:14px; font-size:22px; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice 0000000114</title>
+  <style>
+    /* --- Print / Page --- */
+    @page { size: A4; margin: 0; }
+    html, body { height: 100%; }
+    body { margin: 0; background:#e9eef5; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+    /* A4 canvas (approx) */
+    .sheet{
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative shapes (similar to reference) */
+    .shape-left{
+      position:absolute; left:-35mm; top:-35mm;
+      width: 90mm; height: 90mm; border-radius: 50%;
+      background: #1f2a33;
+      opacity: .95;
+    }
+    .shape-right{
+      position:absolute; right:-40mm; top:-35mm;
+      width: 110mm; height: 110mm; border-radius: 50%;
+      background: #2ecc71;
+      opacity: .95;
+    }
+    .top-bar{
+      position:absolute; left:70mm; top:10mm;
+      width: 85mm; height: 16mm;
+      border-radius: 10mm;
+      background: #1f2a33;
+      opacity: .95;
+    }
+
+    /* Watermark */
+    .watermark{
+      position:absolute;
+      right: 18mm;
+      top: 34mm;
+      font-weight: 800;
+      letter-spacing: .35em;
+      font-size: 26pt;
+      color: rgba(0,0,0,.18);
+      user-select: none;
+      z-index: 1;
+    }
+    .watermark-img{
+      position:absolute;
+      right: 16mm;
+      top: 30mm;
+      width: 80mm;
+      opacity: .06;
+      z-index: 1;
+      pointer-events:none;
+    }
+
+    /* Layout grid */
+    .content{ position: relative; z-index: 2; padding: 16mm 16mm 14mm 16mm; }
+    .row{ display:flex; gap: 10mm; }
+    .col{ flex:1; }
+
+    /* Logo */
+    .logo-wrap{ height: 22mm; display:flex; align-items:flex-start; }
+    .logo{
+      height: 18mm;
+      max-width: 70mm;
+      object-fit: contain;
+    }
+    .logo-fallback{
+      font-weight:900; font-size: 20pt; color:#1f2a33; line-height:1;
+    }
+    .tagline{ margin-top: 2mm; font-size: 9pt; color:#667; font-weight:600; }
+
+    /* QR */
+    .qrbox{
+      position:absolute;
+      top: 10mm; right: 16mm;
+      width: 24mm; height: 24mm;
+      background:#fff;
+      border: 2px solid #2ecc71;
+      border-radius: 3mm;
+      display:flex; align-items:center; justify-content:center;
+      padding: 2mm;
+    }
+    .qrbox img{ width: 100%; height: 100%; object-fit: contain; }
+
+    /* Invoice title */
+    .title{
+      text-align:right;
+      margin-top: 6mm;
+      font-size: 30pt;
+      font-weight: 900;
+      letter-spacing: .22em;
+      color: rgba(0,0,0,.18);
+    }
+    .line-green{
+      width: 75mm; height: 1.2mm; background:#2ecc71;
+      margin-left:auto; margin-top: 3mm; border-radius: 1mm;
+    }
+
+    /* Buyer block */
+    .label{ font-size: 8pt; color:#6b7280; font-weight:800; letter-spacing:.06em; }
+    .buyer-name{ font-size: 14pt; font-weight: 900; color:#101828; margin-top: 2mm; }
+    .buyer-sub{ font-size: 9pt; color:#344054; margin-top: 1mm; line-height: 1.35; }
+
+    /* Meta mini table (Invoice No / Date / Due) */
+    .meta{
+      margin-top: 8mm;
+      margin-left:auto;
+      width: 92mm;
+      border-top: 2px solid #2ecc71;
+      padding-top: 3mm;
+    }
+    .meta-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      border: 1px solid rgba(0,0,0,.08);
+      border-left: 0;
+      border-right: 0;
+      padding: 3mm 0;
+    }
+    .meta-cell{ padding: 0 3mm; border-right: 1px solid rgba(0,0,0,.08); }
+    .meta-cell:last-child{ border-right: 0; }
+    .meta-k{ font-size: 7.5pt; color:#667085; font-weight:800; }
+    .meta-v{ font-size: 9.5pt; color:#101828; font-weight:900; margin-top: 1mm; }
+
+    /* Items table */
+    .items{
+      margin-top: 14mm;
+      border-radius: 4mm;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.08);
+    }
+    .items-head{
+      display:grid;
+      grid-template-columns: 1.8fr .6fr .8fr .8fr;
+      background: linear-gradient(90deg, #2ecc71 0%, #2ecc71 52%, #1f2a33 52%, #1f2a33 100%);
+      color:#fff;
+      font-weight:900;
+      font-size: 10pt;
+    }
+    .items-head div{ padding: 4mm 5mm; }
+    .items-body .r{
+      display:grid;
+      grid-template-columns: 1.8fr .6fr .8fr .8fr;
+      border-top: 1px solid rgba(0,0,0,.06);
+      font-size: 10pt;
+      align-items:center;
+    }
+    .items-body .r div{ padding: 4mm 5mm; }
+    .items-body .desc{ font-weight:800; color:#101828; }
+    .items-body .mut{ font-size: 8pt; color:#667085; margin-top: 1mm; font-weight:600; }
+    .right{ text-align:right; }
+    .center{ text-align:center; }
+
+    /* Totals block */
+    .totals-row{ display:flex; justify-content:flex-end; margin-top: 14mm; }
+    .totals{
+      width: 86mm;
+      border-radius: 4mm;
+      overflow:hidden;
+      background:#1f2a33;
+      color:#fff;
+    }
+    .totals .line{
+      display:flex; justify-content:space-between;
+      padding: 4mm 5mm;
+      font-weight:900;
+      font-size: 10pt;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .totals .total{
+      background:#2ecc71;
+      color:#062012;
+      display:flex; justify-content:space-between;
+      padding: 5mm 5mm;
+      font-weight: 1000;
+      font-size: 12pt;
+    }
+
+    /* Bottom thanks */
+    .thanks{
+      position:absolute;
+      left: 16mm; right: 16mm;
+      bottom: 16mm;
+      height: 18mm;
+      background:#2ecc71;
+      border-radius: 4mm;
+      display:flex; align-items:center;
+      padding: 0 8mm;
+      color:#fff;
+      font-weight: 1000;
+      font-size: 16pt;
+    }
+
+    /* Print helpers */
+    @media print{
+      body{ background:#fff; }
+      .sheet{ box-shadow:none; }
+    }
+  </style>
 </head>
 <body>
-  <div class="page">
-    <div class="top">
-      <div>
-        <div class="bill">
-          <div class="label">INVOICE TO</div>
-          <div class="name">Коммерсиал Трейд БГ ЕООД</div>
-          <div class="addr">
-            Цар Иван Александъър 91<br/>
-            9700 град Шумен
+  <div class="sheet">
+    <div class="shape-left"></div>
+    <div class="shape-right"></div>
+    <div class="top-bar"></div>
+
+    <div class="watermark">INVOICE</div>
+
+    <div class="qrbox"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAYAAAA8AXHiAAAAAklEQVR4AewaftIAAASOSURBVO3BMY5YiQpFwdOoMxOZDZj9L4oVkJH3t37MBE96qMeeW/Xx4+evL/4A08UTHslmuniDR7KZLjYeyRPTxcYj+RMYIgcMkQOGyAFD5IAhcuCTfzBdfAeP5JJH8obp4t9kuvgOHsnGEDlgiBwwRA4YIgcMkQOfPOSRvGG6eINHspkunvBINtPFG6aLjUdyySN5w3TxhCFywBA5YIgcMEQOGCIHPvlLeSRPTBcbj2QzXTzhkWymi7+RIXLAEDlgiBwwRA4YIgc++UtNFxuP5A0eyWa6eMIj2UwXfzJD5IAhcsAQOWCIHDBEDnzy0HTxN/JINtPFxiPZeCRPTBeXpovvYIgcMEQOGCIHDJEDhsiBT/6BR/JfMl1sPJLNdLHxSDbTxcYj2UwXT3gk/yaGyAFD5IAhcsAQOWCIHPj4+o0/mEfyhuniCY9kM11sPJLNdPE3MkQOGCIHDJEDhsgBQ+TAx4+fv75YTBcbj+Q7TBdv8Eg208XGI9lMFxuPZDNdbDySzXSx8Ui+w3TxhCFywBA5YIgcMEQOGCIHPnlounjCI9lMF2/wSDbTxXeYLjYeyRMeyRumi+9giBwwRA4YIgcMkQOGyIGPr994gUfyJ5guNh7JZrp4g0fyxHSx8Ug208UTHslmunjCI9kYIgcMkQOGyAFD5IAhcuDj6zde4JFspouNR7KZLi55JJvpYuORbKaLjUfyxHSx8UjeMF18B0PkgCFywBA5YIgcMEQOfPz4+euLbzBdbDySzXSx8Ug208XGI9lMF5c8kiemi41HspkunvBINtPFEx7JxhA5YIgcMEQOGCIHDJEDnzw0XbzBI9lMFxuPZDNdXPJI3jBdvGG62Hgkm+niCY/kDYbIAUPkgCFywBA5YIgc+Pjx89cXi+li45Fspos3eCSb6eLfxCO5NF1sPJInposnPJI3GCIHDJEDhsgBQ+SAIXLgk2MeyRPTxRs8kiemi41H8sR08QaPZDNdPOGRbKaLzXSx8UieMEQOGCIHDJEDhsgBQ+TAJw9NF2+YLjYeyaXp4g3TxcYjueSRvMEj2UwXbzBEDhgiBwyRA4bIAUPkwMfXb/zBPJI3TBeXPJInpos3eCRvmC42HsnGEDlgiBwwRA4YIgcMkQMfP37++uIPMF1c8kiemC7e4JFspouNR7KZLjYeyWa62HgkbzBEDhgiBwyRA4bIAUPkwCf/YLr4Dh7JEx7JE9PFE9PFEx7JpeniDR7JZrp4gyFywBA5YIgcMEQOGCIHPnnII3nDdHFpuvgO08XGI3nCI/kOHslmuth4JBtD5IAhcsAQOWCIHDBEDnwi/zddbDySN0wXb/BILk0XG4/kCUPkgCFywBA5YIgcMEQOfPIf45FspovNdLHxSJ7wSDbTxcYj2UwXlzySzXSx8Ug2hsgBQ+SAIXLAEDlgiBz45KHp4t9kunhiunjCI3liunjDdLHxSJ6YLjYeyWa6eIMhcsAQOWCIHDBEDhgiBz75Bx7Jn8AjeWK6eMN0sfFINtPFEx7JE9PFE9PFxiN5gyFywBA5YIgcMEQOGCIH/get3HgvJpqaNgAAAABJRU5ErkJggg==" alt="QR"></div>
+
+    <div class="content">
+      <div class="row">
+        <div class="col">
+          <div class="logo-wrap">
+            <div>
+                     <div class="logo-fallback">SimpleTax</div>
+                     <div class="tagline">Accounting • ERP • AI</div>
+                   </div>
+          </div>
+
+          <div style="margin-top: 10mm;">
+            <div class="label">INVOICE TO</div>
+            <div class="buyer-name">Коммерсиал Трейд БГ ЕООД</div>
+            <div class="buyer-sub">
+              Цар Иван Александъър 91<br/>
+              9700 град Шумен<br/>BG
+              <br/><span class="label">VAT:</span> BG204489479
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="title">INVOICE</div>
+          <div class="line-green"></div>
+
+          <div class="meta">
+            <div class="meta-grid">
+              <div class="meta-cell">
+                <div class="meta-k">Invoice No</div>
+                <div class="meta-v">0000000114</div>
+              </div>
+              <div class="meta-cell">
+                <div class="meta-k">Invoice Date</div>
+                <div class="meta-v">2026-01-05</div>
+              </div>
+              <div class="meta-cell">
+                <div class="meta-k">Due Date</div>
+                <div class="meta-v">2026-01-12</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div style="flex:1">
-        <p class="h1">INVOICE</p>
-        <div class="meta">
-          <table>
-            <tr>
-              <th>Invoice No</th><td>0000000114</td>
-              <th>Invoice Date</th><td>2026-01-05</td>
-              <th>Due Date</th><td>2026-01-12</td>
-            </tr>
-          </table>
+
+      <div class="items">
+        <div class="items-head">
+          <div>Item Description</div>
+          <div class="center">Quantity</div>
+          <div class="right">Unit Price</div>
+          <div class="right">Total</div>
+        </div>
+
+        <div class="items-body">
+          
+                      <div class="r">
+                        <div>
+                          <div class="desc">Административно обслужване</div>
+                          
+                        </div>
+                        <div class="center">1</div>
+                        <div class="right">103 EUR</div>
+                        <div class="right"><b>103 EUR</b></div>
+                      </div>
+                    
         </div>
       </div>
-      <div class="qr">
-        <img alt="QR" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAAAAAklEQVR4AewaftIAAAUjSURBVO3BgW0jQRADweZA+afMdwSrB9Y3so2uSr8gacUgac0gac0gac0gac0gac0gac0gac0gac2L/5CEv64tN5Jw0panJeGkLSdJuNGWkyT8dW05GSStGSStGSStGSStGSStGSStGSStefEN2vLTJeGTkvC0tvxmbfnpknBjkLRmkLRmkLRmkLRmkLRmkLRmkLTmxYIkPKktT0vCSVtuJOGkLU9ry0kSPi0JT2rLkwZJawZJawZJawZJawZJawZJawZJa17oWyThRltOkvBOW24k4aQtujNIWjNIWjNIWjNIWjNIWjNIWjNIWvNC36ItJ0l4WhJO2nIjCSdt0dkgac0gac0gac0gac0gac0gac0gac2LBW3RWRJO2vJOEk6ScKMtn9aW32yQtGaQtGaQtGaQtGaQtGaQtGaQtGaQtObFN0iC7rTlJAnvtOUkCSdtOUnCSVtuJOGvGyStGSStGSStGSStGSStGSStGSStSb+gt5LwpLbcSsJJW06ScNIW3RkkrRkkrRkkrRkkrRkkrRkkrRkkrXnxH5Jw0paTJPx0bTlpy40k3EjCO205ScJJW06ScNKWkyT8dG150iBpzSBpzSBpzSBpzSBpzSBpzSBpzYsFbbmRhJO2PC0JJ2356dpykoQbSXhaW36zQdKaQdKaQdKaQdKaQdKaQdKaQdKa9AsfloS/ri0nSThpy9OScKMtJ0k4acutJJy05UYSTtpyMkhaM0haM0haM0haM0haM0haM0hak37hw5Jw0paTJLzTlk9KwklbTpLwTltOknCjLSdJeFpbfrNB0ppB0ppB0ppB0ppB0ppB0ppB0pr0C28k4SdryztJOGnLSRJO2nKShJO2fFoSbrTlJAknbbmVhJO23EjCSVtOBklrBklrBklrBklrBklrBklrBklrBklrXixoy5OS8E5bTpJw0pZPSsLT2vKktpwk4Z223EjCJw2S1gyS1gyS1gyS1gyS1gyS1gyS1qRfeCMJJ205ScJJW56WhJO2/HZJ+KS2nCThVltuJOFJbTkZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK158Qsk4VZbnpSEG205ScKttjwpCSdtuZWEk7actOUkCU8aJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK15saAtT2rLO0n4pLY8rS0nSfikJDwtCSdt+aRB0ppB0ppB0ppB0ppB0ppB0ppB0pr0C3orCU9qy6cl4UZbnpaEJ7XlJAknbTkZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK158R+S8Ne15aQtT0rCrbbcaMtJEm4k4aQtt9pykoSTJDxpkLRmkLRmkLRmkLRmkLRmkLRmkLTmxTdoy0+XhBtJuNGWG225lYRPasvTknDSlk8aJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK0ZJK15sSAJT2rLp7Xlp2vLSRJuJOGnS8JJW06ScNKWk0HSmkHSmkHSmkHSmkHSmkHSmkHSmhf6EdpykoSnteVJSfi0tpwk4UmDpDWDpDWDpDWDpDWDpDWDpDWDpDUvtCIJJ205acs7SbiRhJO2nCThpC2floSTtpwk4cYgac0gac0gac0gac0gac0gac0gac2LBW357dpyoy03knCrLU9qy0kSbrXlJAknbfmkQdKaQdKaQdKaQdKaQdKaQdKaQdKaF98gCX9dEm605WltOUnCSVtuJOFGW2615SQJnzRIWjNIWjNIWjNIWjNIWjNIWjNIWpN+QdKKQdKaQdKaQdKaQdKaQdKaQdKaQdKaf7ePmLEH8MxlAAAAAElFTkSuQmCC" />
+
+      <div class="totals-row">
+        <div class="totals">
+          <div class="line"><span>Subtotal</span><span>103 EUR</span></div>
+          <div class="line"><span>Reference</span><span>0000000114</span></div>
+          <div class="total"><span>TOTAL</span><span>103 EUR</span></div>
+        </div>
       </div>
-    </div>
 
-    <div class="table">
-      <table class="items">
-        <thead class="thead">
-          <tr>
-            <th>Item Description</th>
-            <th class="num">Quantity</th>
-            <th class="num">Unit Price</th>
-            <th class="num">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-              <tr>
-                <td class="desc">
-                  <div class="title">Административно обслужване</div>
-                </td>
-                <td class="num">1</td>
-                <td class="num">103 EUR</td>
-                <td class="num b">103 EUR</td>
-              </tr>
-            
-        </tbody>
-      </table>
-    </div>
-
-    <div class="totals">
-      <div class="box">
-        <div class="row dark"><span>Subtotal</span><span>103 EUR</span></div>
-        <div class="row green"><span>TOTAL</span><span>103 EUR</span></div>
+      <div style="margin-top: 10mm; color:#667085; font-size:9pt; font-weight:700;">
+        Issued by: В. Вътев<br/>
+        Payment method: BankTransfer<br/>
+        IBAN: BG60INTF40012076843552<br/>
       </div>
+
     </div>
 
-    <div class="footer">Thank you for your business!</div>
+    <div class="thanks">Thank you for your business!</div>
   </div>
 </body>
 </html>
