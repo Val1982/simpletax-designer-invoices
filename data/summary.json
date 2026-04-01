@@ -1,7 +1,6 @@
 {
-  "pulled_total": 0,
-  "fresh_after_dedupe": 0,
+  "pulled_total": 9,
   "issuedTimestampFrom_used": "2026-03-30 13:57:57",
-  "newestIssuedTimestamp_found": null,
-  "note": "No new documents (noDocumentsFound). This is OK."
+  "newestIssuedTimestamp_found": "2026-04-01 08:06:56",
+  "nextCursor_saved": "2026-04-01 08:06:57"
 }
