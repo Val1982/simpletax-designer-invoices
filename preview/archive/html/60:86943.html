@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice 0000000132</title>
+  <style>
+    /* --- Print / Page --- */
+    @page { size: A4; margin: 0; }
+    html, body { height: 100%; }
+    body { margin: 0; background:#e9eef5; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+    /* A4 canvas (approx) */
+    .sheet{
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative shapes (similar to reference) */
+    .shape-left{
+      position:absolute; left:-35mm; top:-35mm;
+      width: 90mm; height: 90mm; border-radius: 50%;
+      background: #1f2a33;
+      opacity: .95;
+    }
+    .shape-right{
+      position:absolute; right:-40mm; top:-35mm;
+      width: 110mm; height: 110mm; border-radius: 50%;
+      background: #2ecc71;
+      opacity: .95;
+    }
+    .top-bar{
+      position:absolute; left:70mm; top:10mm;
+      width: 85mm; height: 16mm;
+      border-radius: 10mm;
+      background: #1f2a33;
+      opacity: .95;
+    }
+
+    /* Watermark */
+    .watermark{
+      position:absolute;
+      right: 18mm;
+      top: 34mm;
+      font-weight: 800;
+      letter-spacing: .35em;
+      font-size: 26pt;
+      color: rgba(0,0,0,.18);
+      user-select: none;
+      z-index: 1;
+    }
+    .watermark-img{
+      position:absolute;
+      right: 16mm;
+      top: 30mm;
+      width: 80mm;
+      opacity: .06;
+      z-index: 1;
+      pointer-events:none;
+    }
+
+    /* Layout grid */
+    .content{ position: relative; z-index: 2; padding: 16mm 16mm 14mm 16mm; }
+    .row{ display:flex; gap: 10mm; }
+    .col{ flex:1; }
+
+    /* Logo */
+    .logo-wrap{ height: 22mm; display:flex; align-items:flex-start; }
+    .logo{
+      height: 18mm;
+      max-width: 70mm;
+      object-fit: contain;
+    }
+    .logo-fallback{
+      font-weight:900; font-size: 20pt; color:#1f2a33; line-height:1;
+    }
+    .tagline{ margin-top: 2mm; font-size: 9pt; color:#667; font-weight:600; }
+
+    /* QR */
+    .qrbox{
+      position:absolute;
+      top: 10mm; right: 16mm;
+      width: 24mm; height: 24mm;
+      background:#fff;
+      border: 2px solid #2ecc71;
+      border-radius: 3mm;
+      display:flex; align-items:center; justify-content:center;
+      padding: 2mm;
+    }
+    .qrbox img{ width: 100%; height: 100%; object-fit: contain; }
+
+    /* Invoice title */
+    .title{
+      text-align:right;
+      margin-top: 6mm;
+      font-size: 30pt;
+      font-weight: 900;
+      letter-spacing: .22em;
+      color: rgba(0,0,0,.18);
+    }
+    .line-green{
+      width: 75mm; height: 1.2mm; background:#2ecc71;
+      margin-left:auto; margin-top: 3mm; border-radius: 1mm;
+    }
+
+    /* Buyer block */
+    .label{ font-size: 8pt; color:#6b7280; font-weight:800; letter-spacing:.06em; }
+    .buyer-name{ font-size: 14pt; font-weight: 900; color:#101828; margin-top: 2mm; }
+    .buyer-sub{ font-size: 9pt; color:#344054; margin-top: 1mm; line-height: 1.35; }
+
+    /* Meta mini table (Invoice No / Date / Due) */
+    .meta{
+      margin-top: 8mm;
+      margin-left:auto;
+      width: 92mm;
+      border-top: 2px solid #2ecc71;
+      padding-top: 3mm;
+    }
+    .meta-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      border: 1px solid rgba(0,0,0,.08);
+      border-left: 0;
+      border-right: 0;
+      padding: 3mm 0;
+    }
+    .meta-cell{ padding: 0 3mm; border-right: 1px solid rgba(0,0,0,.08); }
+    .meta-cell:last-child{ border-right: 0; }
+    .meta-k{ font-size: 7.5pt; color:#667085; font-weight:800; }
+    .meta-v{ font-size: 9.5pt; color:#101828; font-weight:900; margin-top: 1mm; }
+
+    /* Items table */
+    .items{
+      margin-top: 14mm;
+      border-radius: 4mm;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.08);
+    }
+    .items-head{
+      display:grid;
+      grid-template-columns: 1.8fr .6fr .8fr .8fr;
+      background: linear-gradient(90deg, #2ecc71 0%, #2ecc71 52%, #1f2a33 52%, #1f2a33 100%);
+      color:#fff;
+      font-weight:900;
+      font-size: 10pt;
+    }
+    .items-head div{ padding: 4mm 5mm; }
+    .items-body .r{
+      display:grid;
+      grid-template-columns: 1.8fr .6fr .8fr .8fr;
+      border-top: 1px solid rgba(0,0,0,.06);
+      font-size: 10pt;
+      align-items:center;
+    }
+    .items-body .r div{ padding: 4mm 5mm; }
+    .items-body .desc{ font-weight:800; color:#101828; }
+    .items-body .mut{ font-size: 8pt; color:#667085; margin-top: 1mm; font-weight:600; }
+    .right{ text-align:right; }
+    .center{ text-align:center; }
+
+    /* Totals block */
+    .totals-row{ display:flex; justify-content:flex-end; margin-top: 14mm; }
+    .totals{
+      width: 86mm;
+      border-radius: 4mm;
+      overflow:hidden;
+      background:#1f2a33;
+      color:#fff;
+    }
+    .totals .line{
+      display:flex; justify-content:space-between;
+      padding: 4mm 5mm;
+      font-weight:900;
+      font-size: 10pt;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .totals .total{
+      background:#2ecc71;
+      color:#062012;
+      display:flex; justify-content:space-between;
+      padding: 5mm 5mm;
+      font-weight: 1000;
+      font-size: 12pt;
+    }
+
+    /* Bottom thanks */
+    .thanks{
+      position:absolute;
+      left: 16mm; right: 16mm;
+      bottom: 16mm;
+      height: 18mm;
+      background:#2ecc71;
+      border-radius: 4mm;
+      display:flex; align-items:center;
+      padding: 0 8mm;
+      color:#fff;
+      font-weight: 1000;
+      font-size: 16pt;
+    }
+
+    /* Print helpers */
+    @media print{
+      body{ background:#fff; }
+      .sheet{ box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="shape-left"></div>
+    <div class="shape-right"></div>
+    <div class="top-bar"></div>
+
+    <img class="watermark-img" src="https://www.simpletax.bg/web/image/website/1/logo" alt="watermark">
+
+    <div class="qrbox"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAYAAAA8AXHiAAAAAklEQVR4AewaftIAAASTSURBVO3BMW5k0Q1FwdNEZ2IkbkDc/6K4AmbMZcPxm+ABn9BofKteH59f3/wC08UTPJInTBcnHskTposTj+Q3MEQWGCILDJEFhsgCQ2TBmz+YLn6CR/IEj+TGdPGE6eLEI9k0XfwEj+TEEFlgiCwwRBYYIgsMkQVvLnkkT5gunuCRPMEjuTFd/AYeyROmixuGyAJDZIEhssAQWWCILHgj/zNdyHMMkQWGyAJDZIEhssAQWfDmHzVdbPJITqaLG9PFv8gQWWCILDBEFhgiCwyRBW8uTRe/mUdyMl2ceCQ3PJIbHsnJdPGE6eInGCILDJEFhsgCQ2SBIbLgzR94JPJn08WJR3IyXZx4JE/wSP4mhsgCQ2SBIbLAEFlgiCx4Txf/T6aLE4/kZLo48UhOposTj+RkurgxXfwGhsgCQ2SBIbLAEFlgiCx4fXx+fXMwXZx4JD9huniCR3JjurjhkTxhujjxSH7CdHHDEFlgiCwwRBYYIgsMkQWv7//iwCN5wnSxySM5mS6e4JGcTBc3PJKT6eLEI3nCdPETDJEFhsgCQ2SBIbLAEFnw5iHTxRM8kpPp4gkeycl0cTJd/ITp4sQjOZkubngkJ9PFDY/kxBBZYIgsMEQWGCILDJEFr4/Pr28OposTj+RkuvibeCQn08UNj+RkujjxSG5MFyceyROmi59giCwwRBYYIgsMkQWGyILXx+fXNwfTxQ2P5GS6OPFInjBd3PBIbkwXT/BIbkwXJx7JyXRxwyM5mS5ueCQnhsgCQ2SBIbLAEFlgiCx4fXx+ffOA6eLEIzmZLp7gkZxMFyceycl0ceKRbJounuCRnEwXJx7JJkNkgSGywBBZYIgsMEQWvD4+v745mC5ueCQ3posTj+TGdHHikZxMF0/wSDZNFyceyY3p4oZH8gRDZIEhssAQWWCILDBEFrw+Pr++OZguTjySk+nixCO5MV2ceCRPmC5ueCQ3posneCQn08UNj+RkurjhkdwwRBYYIgsMkQWGyAJDZMHr4/Prm4Pp4oZHcjJdnHgkN6aLE4/kZLo48UhOposTj+RkujjxSH6z6eLEI7lhiCwwRBYYIgsMkQWGyILX93/xi3kkJ9PF38QjuTFdPMEjecJ0ceKRnBgiCwyRBYbIAkNkgSGy4PXx+fXNLzBdPMEjecJ08QSP5GS6OPFITqaLE4/kZLo48UieYIgsMEQWGCILDJEFhsiCN38wXfwEj+SGR3IyXZxMFyceycl0ccMj2TRdPMEjOZkunmCILDBEFhgiCwyRBYbIgjeXPJInTBf/ounixCO54ZH8BI/kxnRxYogsMEQWGCILDJEFhsiCN/8oj+TGdHHikTxhuniCR7JpurjhkZwYIgsMkQWGyAJDZIEhsuDNP2q6OPFIbkwXJx7JDY/kZLo48UhOpotNHsnJdHHDEFlgiCwwRBYYIgsMkQVvLk0Xf5PpYpNHcmO6eMJ0ceKR3JguTjySk+niCYbIAkNkgSGywBBZYIgsePMHHslv4JHcmC6eMF2ceCQn08UNj+TGdHFjujjxSJ5giCwwRBYYIgsMkQWGyIL/AFAFdGGho2BAAAAAAElFTkSuQmCC" alt="QR"></div>
+
+    <div class="content">
+      <div class="row">
+        <div class="col">
+          <div class="logo-wrap">
+            <img class="logo" src="https://www.simpletax.bg/web/image/website/1/logo" alt="logo">
+          </div>
+
+          <div style="margin-top: 10mm;">
+            <div class="label">INVOICE TO</div>
+            <div class="buyer-name">Брокер Инс ООД</div>
+            <div class="buyer-sub">
+              ул. Кърниградска 3<br/>
+              1000 град София<br/>BG
+              <br/><span class="label">VAT:</span> 121773065
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="title">INVOICE</div>
+          <div class="line-green"></div>
+
+          <div class="meta">
+            <div class="meta-grid">
+              <div class="meta-cell">
+                <div class="meta-k">Invoice No</div>
+                <div class="meta-v">0000000132</div>
+              </div>
+              <div class="meta-cell">
+                <div class="meta-k">Invoice Date</div>
+                <div class="meta-v">2026-04-15</div>
+              </div>
+              <div class="meta-cell">
+                <div class="meta-k">Due Date</div>
+                <div class="meta-v">2026-04-22</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="items">
+        <div class="items-head">
+          <div>Item Description</div>
+          <div class="center">Quantity</div>
+          <div class="right">Unit Price</div>
+          <div class="right">Total</div>
+        </div>
+
+        <div class="items-body">
+          
+                      <div class="r">
+                        <div>
+                          <div class="desc">Item</div>
+                          <div class="mut">Възнаграждение по договор. Отчет  номер 361790</div>
+                        </div>
+                        <div class="center">1</div>
+                        <div class="right">79.96 EUR</div>
+                        <div class="right"><b>79.96 EUR</b></div>
+                      </div>
+                    
+        </div>
+      </div>
+
+      <div class="totals-row">
+        <div class="totals">
+          <div class="line"><span>Subtotal</span><span>79.96 EUR</span></div>
+          <div class="line"><span>Reference</span><span>0000000132</span></div>
+          <div class="total"><span>TOTAL</span><span>79.96 EUR</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 10mm; color:#667085; font-size:9pt; font-weight:700;">
+        Issued by: www.simpletax.bg Валери Петров<br/>
+        Payment method: BankTransfer<br/>
+        IBAN: BG60INTF40012076843552<br/>
+      </div>
+
+    </div>
+
+    <div class="thanks">Thank you for your business!</div>
+  </div>
+</body>
+</html>
