@@ -1,1 +1,1 @@
-{"response": {"status": "error","release": "1040.10","url": "WebServicesBG","serverTime": "2026-06-30T14:33:15","apiMethod": "SalesInvoiceList","description": "Error nr: 1 #noDocumentsFound - No documents were found matching search criteria!; \r\n"}}
+{"response": {"status": "error","release": "1040.10","url": "WebServicesBG","serverTime": "2026-06-30T16:28:24","apiMethod": "SalesInvoiceList","description": "Error nr: 1 #noDocumentsFound - No documents were found matching search criteria!; \r\n"}}
